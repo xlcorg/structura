@@ -1,0 +1,50 @@
+{
+  "order_id": "ORD-2026-000123",
+  "external-id": "erp-998877",
+  "created_at_utc": "2026-05-02T10:15:30Z",
+  "updated_at_utc": null,
+  "status": "Paid",
+  "is_priority": true,
+  "version": 7,
+  "total_amount": 15499.95,
+  "currency": "RUB",
+  "customer": {
+    "customer_id": "CUST-001",
+    "first_name": "Artem",
+    "last_name": "Sorokovikov",
+    "middle_name": null,
+    "preferences": {
+      "newsletter_subscribed": false,
+      "marketing-consent": true
+    }
+  },
+  "billing_address": {
+    "country_code": "NL",
+    "postal_code": "1011AB",
+    "city": "Amsterdam",
+    "2nd_line": null
+  },
+  "items": [
+    {
+      "line_id": 1,
+      "sku": "NB-001",
+      "quantity": 1,
+      "unit_price": 14999.95,
+      "tags": ["electronics", "laptop"],
+      "serial_numbers": []
+    },
+    {
+      "line_id": 2,
+      "sku": "NB-002",
+      "quantity": 1,
+      "unit_price": 14999.95,
+      "tags": ["electronics", "laptop"],
+      "serial_numbers": []
+    }
+  ],
+  "metadata": {
+    "campaign": "spring-sale",
+    "risk_score": 0.12,
+    "fraud_review_required": false
+  }
+}

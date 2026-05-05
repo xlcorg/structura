@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/common/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Structura.Generator/Structura.Generator.csproj" />
+    <Project Path="src/Structura.Reporting/Structura.Reporting.csproj" />
+    <Project Path="src/Structura.Runtime/Structura.Runtime.csproj" />
+    <Project Path="src/Structura/Structura.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>

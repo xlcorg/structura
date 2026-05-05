@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Structura.IntegrationTests"/>
+  </ItemGroup>
+</Project>
