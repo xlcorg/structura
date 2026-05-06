@@ -3,6 +3,7 @@
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <StructuraJsonSamplesFolder>..\..\src\Structura\Samples</StructuraJsonSamplesFolder>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,8 +21,9 @@
         <ProjectReference Include="..\..\src\Structura.Runtime\Structura.Runtime.csproj" />
     </ItemGroup>
 
+    <Import Project="..\..\src\Structura.Generator\build\Structura.Generator.props" />
+
     <ItemGroup>
-        <AdditionalFiles Include="..\..\src\Structura\Samples\order.sample.json" />
         <Content Include="..\..\src\Structura\Samples\order.sample.json"
                  CopyToOutputDirectory="PreserveNewest"
                  Link="order.sample.json" />

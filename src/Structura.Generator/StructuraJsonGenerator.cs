@@ -8,9 +8,13 @@ using Microsoft.CodeAnalysis.Text;
 namespace Structura.Generator;
 
 /// <summary>
-/// Roslyn incremental source generator. For every <c>*.sample.json</c>
+/// Roslyn incremental source generator. For every <c>*.json</c>
 /// AdditionalFile it emits one <c>{ClassName}.g.cs</c> containing a
-/// strongly-typed document model in <c>Structura.Generated</c>.
+/// strongly-typed document model in <c>Structura.Generated</c>. The
+/// folder scanned for sample documents is configured via the
+/// <c>StructuraJsonSamplesFolder</c> MSBuild property in the consuming
+/// project (default: <c>Samples</c>) and glued to <c>AdditionalFiles</c>
+/// by <c>build/Structura.Generator.props</c>.
 /// </summary>
 [Generator]
 public sealed class StructuraJsonGenerator : IIncrementalGenerator
@@ -18,7 +22,7 @@ public sealed class StructuraJsonGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var jsonFiles = context.AdditionalTextsProvider
-            .Where(static f => f.Path.EndsWith(".sample.json",
+            .Where(static f => f.Path.EndsWith(".json",
                 StringComparison.OrdinalIgnoreCase));
 
         var models = jsonFiles.Select(static (file, ct) =>

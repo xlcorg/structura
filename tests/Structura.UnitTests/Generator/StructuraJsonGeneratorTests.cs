@@ -111,9 +111,47 @@ public sealed class StructuraJsonGeneratorTests
     }
 
     [Fact]
-    public void Generator_IgnoresNonSampleJsonFiles()
+    public void Generator_ProcessesPlainJsonFile_NoSampleInfix()
     {
-        var result = RunGenerator("config.json", "{}");
+        // Filter is now ".json" — plain "customer.json" must produce a model.
+        var result = RunGenerator("customer.json", "{ \"name\": \"Alice\" }");
+        result.GeneratedTrees.Should().HaveCount(1);
+        result.GeneratedTrees[0].FilePath.Should().EndWith("CustomerJson.g.cs");
+        result.Diagnostics.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Generator_ProcessesAnyJsonExtension_RegardlessOfInfix()
+    {
+        // "config.json" used to be ignored; now it's a first-class input.
+        var result = RunGenerator("config.json", "{ \"port\": 8080 }");
+        result.GeneratedTrees.Should().HaveCount(1);
+        result.GeneratedTrees[0].FilePath.Should().EndWith("ConfigJson.g.cs");
+    }
+
+    [Fact]
+    public void Generator_ProcessesMultipleJsonFiles_OnePerFile()
+    {
+        var result = RunGenerator(new[]
+        {
+            ("order.json",    "{ \"id\": 1 }"),
+            ("customer.json", "{ \"name\": \"Bob\" }"),
+        });
+
+        result.GeneratedTrees.Should().HaveCount(2);
+        result.GeneratedTrees.Select(t => t.FilePath)
+            .Should().Contain(p => p.EndsWith("OrderJson.g.cs"))
+            .And.Contain(p => p.EndsWith("CustomerJson.g.cs"));
+    }
+
+    [Theory]
+    [InlineData("data.txt")]
+    [InlineData("config.xml")]
+    [InlineData("readme.md")]
+    [InlineData("schema.yaml")]
+    public void Generator_IgnoresNonJsonFiles(string fileName)
+    {
+        var result = RunGenerator(fileName, "irrelevant content");
         result.GeneratedTrees.Should().BeEmpty();
     }
 
@@ -128,6 +166,10 @@ public sealed class StructuraJsonGeneratorTests
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static GeneratorDriverRunResult RunGenerator(string fileName, string jsonContent)
+        => RunGenerator(new[] { (fileName, jsonContent) });
+
+    private static GeneratorDriverRunResult RunGenerator(
+        (string fileName, string jsonContent)[] files)
     {
         var compilation = CSharpCompilation.Create(
             "TestAssembly",
@@ -138,11 +180,13 @@ public sealed class StructuraJsonGeneratorTests
 
         var generator = new StructuraJsonGenerator();
 
-        var additionalText = new InMemoryAdditionalText(fileName, jsonContent);
+        var additionalTexts = files
+            .Select(f => (AdditionalText)new InMemoryAdditionalText(f.fileName, f.jsonContent))
+            .ToImmutableArray();
 
         var driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
-                additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
+                additionalTexts: additionalTexts)
             .RunGenerators(compilation);
 
         return driver.GetRunResult();

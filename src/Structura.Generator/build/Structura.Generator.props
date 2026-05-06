@@ -1,0 +1,26 @@
+<Project>
+
+  <!--
+    Convention for Structura JSON sample documents.
+
+    A consuming project sets:
+
+      <PropertyGroup>
+        <StructuraJsonSamplesFolder>Samples</StructuraJsonSamplesFolder>
+      </PropertyGroup>
+
+    and imports this file. Every *.json file in that folder is then exposed
+    to the source generator as an AdditionalFile, and the generator produces
+    a strongly-typed model class per file in the Structura.Generated namespace.
+
+    Default folder: Samples (relative to the consuming project directory).
+  -->
+  <PropertyGroup>
+    <StructuraJsonSamplesFolder Condition="'$(StructuraJsonSamplesFolder)' == ''">Samples</StructuraJsonSamplesFolder>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)\$(StructuraJsonSamplesFolder)')">
+    <AdditionalFiles Include="$(StructuraJsonSamplesFolder)\*.json" />
+  </ItemGroup>
+
+</Project>
