@@ -11,9 +11,11 @@
         <PackageReference Include="xunit.runner.visualstudio" />
         <PackageReference Include="FluentAssertions" />
         <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Structura.Generator\Structura.Generator.csproj" />
         <ProjectReference Include="..\..\src\Structura.Runtime\Structura.Runtime.csproj" />
     </ItemGroup>
 

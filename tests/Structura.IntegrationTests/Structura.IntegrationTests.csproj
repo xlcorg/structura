@@ -14,7 +14,17 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Structura.Generator\Structura.Generator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\..\src\Structura.Runtime\Structura.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\src\Structura\Samples\order.sample.json" />
+        <Content Include="..\..\src\Structura\Samples\order.sample.json"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="order.sample.json" />
     </ItemGroup>
 
 </Project>

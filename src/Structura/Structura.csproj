@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -8,9 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Structura.Generator\Structura.Generator.csproj" />
-      <ProjectReference Include="..\Structura.Reporting\Structura.Reporting.csproj" />
-      <ProjectReference Include="..\Structura.Runtime\Structura.Runtime.csproj" />
+        <ProjectReference Include="..\Structura.Generator\Structura.Generator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Structura.Reporting\Structura.Reporting.csproj" />
+        <ProjectReference Include="..\Structura.Runtime\Structura.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Samples\*.sample.json" />
     </ItemGroup>
 
 </Project>
