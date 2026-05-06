@@ -24,7 +24,7 @@ internal static class JsonPointerEscaper
         var sb = new StringBuilder(jsonKey.Length + 8);
         sb.Append('/');
 
-        foreach (var c in jsonKey)
+        foreach (char c in jsonKey)
         {
             if (c == '~')
             {

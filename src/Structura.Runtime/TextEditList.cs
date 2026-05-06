@@ -9,7 +9,7 @@ namespace Structura.Runtime;
 /// </summary>
 public sealed class TextEditList
 {
-    private readonly Dictionary<TextSpan, TextEdit> _edits = new();
+    private readonly Dictionary<TextSpan, TextEdit> _edits = new Dictionary<TextSpan, TextEdit>();
 
     public bool HasEdits => _edits.Count > 0;
 
@@ -18,9 +18,15 @@ public sealed class TextEditList
         _edits[edit.Span] = edit;
     }
 
-    public bool Remove(TextSpan span) => _edits.Remove(span);
+    public bool Remove(TextSpan span)
+    {
+        return _edits.Remove(span);
+    }
 
-    public void Clear() => _edits.Clear();
+    public void Clear()
+    {
+        _edits.Clear();
+    }
 
     public IReadOnlyList<TextEdit> Snapshot()
     {
@@ -40,7 +46,7 @@ public sealed class TextEditList
     public string Apply(string source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        var sorted = Snapshot();
+        IReadOnlyList<TextEdit> sorted = Snapshot();
         if (sorted.Count == 0)
         {
             return source;
@@ -48,7 +54,7 @@ public sealed class TextEditList
 
         var sb = new StringBuilder(source.Length);
         var cursor = 0;
-        foreach (var edit in sorted)
+        foreach (TextEdit edit in sorted)
         {
             if (edit.Span.End > source.Length)
             {

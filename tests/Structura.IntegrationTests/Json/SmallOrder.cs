@@ -46,7 +46,7 @@ public sealed class SmallOrder : IStructuraJsonDocument<SmallOrder>, IStructuraD
 
     public static SmallOrder ParseFromJson(string source)
     {
-        var root = JsonSourceParser.Parse(source);
+        JsonSourceNode root = JsonSourceParser.Parse(source);
         if (root is not JsonSourceObject obj)
         {
             throw new JsonParseException("Expected JSON object at root.");
@@ -84,7 +84,10 @@ public sealed class SmallOrder : IStructuraJsonDocument<SmallOrder>, IStructuraD
         }
     }
 
-    public string ToJson() => _ctx.ApplyEdits();
+    public string ToJson()
+    {
+        return _ctx.ApplyEdits();
+    }
 
     string IStructuraDocument.OriginalText => _ctx.OriginalText;
     string IStructuraDocument.CurrentText => _ctx.ApplyEdits();

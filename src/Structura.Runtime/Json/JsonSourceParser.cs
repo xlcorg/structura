@@ -17,7 +17,7 @@ public static class JsonSourceParser
 
         var state = new ParserState(source);
         state.SkipWhitespace();
-        var root = state.ParseValue();
+        JsonSourceNode root = state.ParseValue();
         state.SkipWhitespace();
         if (!state.IsAtEnd)
         {
@@ -47,7 +47,7 @@ public static class JsonSourceParser
             {
                 throw new JsonParseException("Unexpected end of input.");
             }
-            var c = _source[_pos];
+            char c = _source[_pos];
             return c switch
             {
                 '{' => ParseObject(),
@@ -64,7 +64,7 @@ public static class JsonSourceParser
 
         private JsonSourceObject ParseObject()
         {
-            var start = _pos;
+            int start = _pos;
             Expect('{');
             SkipWhitespace();
             var properties = new List<JsonSourceProperty>();
@@ -81,18 +81,18 @@ public static class JsonSourceParser
                     throw new JsonParseException(
                         $"Expected string key at position {_pos}.");
                 }
-                var key = ParseString();
+                JsonSourceString key = ParseString();
                 SkipWhitespace();
                 Expect(':');
                 SkipWhitespace();
-                var value = ParseValue();
+                JsonSourceNode value = ParseValue();
                 properties.Add(new JsonSourceProperty(key.Value, key.Span, value.Span, value));
                 SkipWhitespace();
                 if (IsAtEnd)
                 {
                     throw new JsonParseException("Unterminated object.");
                 }
-                var c = _source[_pos];
+                char c = _source[_pos];
                 if (c == ',')
                 {
                     _pos++;
@@ -111,7 +111,7 @@ public static class JsonSourceParser
 
         private JsonSourceArray ParseArray()
         {
-            var start = _pos;
+            int start = _pos;
             Expect('[');
             SkipWhitespace();
             var items = new List<JsonSourceNode>();
@@ -129,7 +129,7 @@ public static class JsonSourceParser
                 {
                     throw new JsonParseException("Unterminated array.");
                 }
-                var c = _source[_pos];
+                char c = _source[_pos];
                 if (c == ',')
                 {
                     _pos++;
@@ -148,7 +148,7 @@ public static class JsonSourceParser
 
         private JsonSourceString ParseString()
         {
-            var start = _pos;
+            int start = _pos;
             Expect('"');
             var sb = new StringBuilder();
             while (true)
@@ -157,7 +157,7 @@ public static class JsonSourceParser
                 {
                     throw new JsonParseException("Unterminated string literal.");
                 }
-                var c = _source[_pos];
+                char c = _source[_pos];
                 if (c == '"')
                 {
                     _pos++;
@@ -170,7 +170,7 @@ public static class JsonSourceParser
                     {
                         throw new JsonParseException("Unterminated escape sequence.");
                     }
-                    var esc = _source[_pos];
+                    char esc = _source[_pos];
                     switch (esc)
                     {
                         case '"': sb.Append('"'); break;
@@ -186,8 +186,8 @@ public static class JsonSourceParser
                             {
                                 throw new JsonParseException("Truncated \\u escape sequence.");
                             }
-                            var hex = _source.Substring(_pos + 1, 4);
-                            if (!int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var code))
+                            string hex = _source.Substring(_pos + 1, 4);
+                            if (!int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int code))
                             {
                                 throw new JsonParseException($"Invalid \\u escape '{hex}'.");
                             }
@@ -214,7 +214,7 @@ public static class JsonSourceParser
 
         private JsonSourceNumber ParseNumber()
         {
-            var start = _pos;
+            int start = _pos;
             if (_source[_pos] == '-')
             {
                 _pos++;
@@ -273,7 +273,7 @@ public static class JsonSourceParser
 
         private JsonSourceBoolean ParseBoolean()
         {
-            var start = _pos;
+            int start = _pos;
             if (Match("true"))
             {
                 return new JsonSourceBoolean(new TextSpan(start, 4), true);
@@ -287,7 +287,7 @@ public static class JsonSourceParser
 
         private JsonSourceNull ParseNull()
         {
-            var start = _pos;
+            int start = _pos;
             if (Match("null"))
             {
                 return new JsonSourceNull(new TextSpan(start, 4));
@@ -325,7 +325,7 @@ public static class JsonSourceParser
         {
             while (!IsAtEnd)
             {
-                var c = _source[_pos];
+                char c = _source[_pos];
                 if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
                 {
                     _pos++;

@@ -42,7 +42,7 @@ public sealed class TextEditListTests
         var list = new TextEditList();
         list.Set(new TextEdit(span, "TARGET"));
 
-        var patched = list.Apply(source);
+        string patched = list.Apply(source);
 
         patched.Should().Be("  prefix  [TARGET]  suffix  ");
         patched[..span.Start].Should().Be(source[..span.Start]);
@@ -65,7 +65,7 @@ public sealed class TextEditListTests
         list.Set(new TextEdit(new TextSpan(0, 5), "foo"));
         list.Set(new TextEdit(new TextSpan(3, 5), "bar"));
 
-        var act = () => list.Apply("hello world");
+        Func<string> act = () => list.Apply("hello world");
         act.Should().Throw<InvalidOperationException>().WithMessage("*Overlapping*");
     }
 
@@ -75,7 +75,7 @@ public sealed class TextEditListTests
         var list = new TextEditList();
         list.Set(new TextEdit(new TextSpan(8, 100), "x"));
 
-        var act = () => list.Apply("hello world");
+        Func<string> act = () => list.Apply("hello world");
         act.Should().Throw<InvalidOperationException>().WithMessage("*past source length*");
     }
 

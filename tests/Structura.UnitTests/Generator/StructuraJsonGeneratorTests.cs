@@ -29,7 +29,7 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_EmitsOneSourceFile_NamedAfterSampleFile()
     {
-        var result = RunGenerator("order.sample.json", MinimalSample);
+        GeneratorDriverRunResult result = RunGenerator("order.sample.json", MinimalSample);
         result.GeneratedTrees.Should().HaveCount(1);
         result.GeneratedTrees[0].FilePath.Should().EndWith("OrderSampleJson.g.cs");
     }
@@ -37,14 +37,14 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_ProducesNoDiagnostics()
     {
-        var result = RunGenerator("order.sample.json", MinimalSample);
+        GeneratorDriverRunResult result = RunGenerator("order.sample.json", MinimalSample);
         result.Diagnostics.Should().BeEmpty();
     }
 
     [Fact]
     public void Generator_EmitsClassDeclaration()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("class OrderSampleJson");
         source.Should().Contain("IStructuraJsonDocument<OrderSampleJson>");
         source.Should().Contain("IStructuraDocument");
@@ -53,42 +53,42 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_EmitsStringProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("string Currency");
     }
 
     [Fact]
     public void Generator_EmitsLongProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("long Version");
     }
 
     [Fact]
     public void Generator_EmitsBoolProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("bool IsPriority");
     }
 
     [Fact]
     public void Generator_EmitsDecimalProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("decimal TotalAmount");
     }
 
     [Fact]
     public void Generator_EmitsNullableStringProperty_ForNullSampleValue()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("string? Notes");
     }
 
     [Fact]
     public void Generator_SkipsObjectProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         // "customer" object → no C# property emitted
         source.Should().NotContain("Customer\n").And.NotContain("Customer\r");
         // But ensure "Currency" IS there to rule out false negatives
@@ -98,7 +98,7 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_SkipsArrayProperty()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         // "items" array → no C# property emitted
         source.Should().NotContain("Items\n").And.NotContain("Items\r");
     }
@@ -106,7 +106,7 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_EmitsNamespace_StructuraGenerated()
     {
-        var source = GetGeneratedSource("order.sample.json", MinimalSample);
+        string source = GetGeneratedSource("order.sample.json", MinimalSample);
         source.Should().Contain("namespace Structura.Generated");
     }
 
@@ -114,7 +114,7 @@ public sealed class StructuraJsonGeneratorTests
     public void Generator_ProcessesPlainJsonFile_NoSampleInfix()
     {
         // Filter is now ".json" — plain "customer.json" must produce a model.
-        var result = RunGenerator("customer.json", "{ \"name\": \"Alice\" }");
+        GeneratorDriverRunResult result = RunGenerator("customer.json", "{ \"name\": \"Alice\" }");
         result.GeneratedTrees.Should().HaveCount(1);
         result.GeneratedTrees[0].FilePath.Should().EndWith("CustomerJson.g.cs");
         result.Diagnostics.Should().BeEmpty();
@@ -124,7 +124,7 @@ public sealed class StructuraJsonGeneratorTests
     public void Generator_ProcessesAnyJsonExtension_RegardlessOfInfix()
     {
         // "config.json" used to be ignored; now it's a first-class input.
-        var result = RunGenerator("config.json", "{ \"port\": 8080 }");
+        GeneratorDriverRunResult result = RunGenerator("config.json", "{ \"port\": 8080 }");
         result.GeneratedTrees.Should().HaveCount(1);
         result.GeneratedTrees[0].FilePath.Should().EndWith("ConfigJson.g.cs");
     }
@@ -132,7 +132,7 @@ public sealed class StructuraJsonGeneratorTests
     [Fact]
     public void Generator_ProcessesMultipleJsonFiles_OnePerFile()
     {
-        var result = RunGenerator(new[]
+        GeneratorDriverRunResult result = RunGenerator(new[]
         {
             ("order.json",    "{ \"id\": 1 }"),
             ("customer.json", "{ \"name\": \"Bob\" }"),
@@ -151,14 +151,14 @@ public sealed class StructuraJsonGeneratorTests
     [InlineData("schema.yaml")]
     public void Generator_IgnoresNonJsonFiles(string fileName)
     {
-        var result = RunGenerator(fileName, "irrelevant content");
+        GeneratorDriverRunResult result = RunGenerator(fileName, "irrelevant content");
         result.GeneratedTrees.Should().BeEmpty();
     }
 
     [Fact]
     public void Generator_HandlesEmptyObject()
     {
-        var result = RunGenerator("empty.sample.json", "{}");
+        GeneratorDriverRunResult result = RunGenerator("empty.sample.json", "{}");
         result.GeneratedTrees.Should().HaveCount(1);
         result.Diagnostics.Should().BeEmpty();
     }
@@ -166,7 +166,9 @@ public sealed class StructuraJsonGeneratorTests
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static GeneratorDriverRunResult RunGenerator(string fileName, string jsonContent)
-        => RunGenerator(new[] { (fileName, jsonContent) });
+    {
+        return RunGenerator(new[] { (fileName, jsonContent) });
+    }
 
     private static GeneratorDriverRunResult RunGenerator(
         (string fileName, string jsonContent)[] files)
@@ -180,11 +182,11 @@ public sealed class StructuraJsonGeneratorTests
 
         var generator = new StructuraJsonGenerator();
 
-        var additionalTexts = files
+        ImmutableArray<AdditionalText> additionalTexts = files
             .Select(f => (AdditionalText)new InMemoryAdditionalText(f.fileName, f.jsonContent))
             .ToImmutableArray();
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: additionalTexts)
             .RunGenerators(compilation);
@@ -194,7 +196,7 @@ public sealed class StructuraJsonGeneratorTests
 
     private static string GetGeneratedSource(string fileName, string jsonContent)
     {
-        var result = RunGenerator(fileName, jsonContent);
+        GeneratorDriverRunResult result = RunGenerator(fileName, jsonContent);
         result.GeneratedTrees.Should().HaveCount(1);
         return result.GeneratedTrees[0].GetText().ToString();
     }
@@ -214,6 +216,8 @@ public sealed class StructuraJsonGeneratorTests
         public override string Path { get; }
 
         public override SourceText? GetText(CancellationToken cancellationToken = default)
-            => _text;
+        {
+            return _text;
+        }
     }
 }

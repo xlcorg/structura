@@ -39,7 +39,7 @@ public static class ConsoleDiffReporter
             return;
         }
 
-        for (int i = 0; i < changes.Count; i++)
+        for (var i = 0; i < changes.Count; i++)
         {
             DocumentChange change = changes[i];
             LineContext ctx = LineContext.Of(document.OriginalText, change.Span);
@@ -95,7 +95,7 @@ public static class ConsoleDiffReporter
 
         private static int CountChar(ReadOnlySpan<char> s, char c)
         {
-            int n = 0;
+            var n = 0;
             foreach (char ch in s)
             {
                 if (ch == c)

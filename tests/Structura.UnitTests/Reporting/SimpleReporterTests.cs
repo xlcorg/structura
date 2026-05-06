@@ -25,15 +25,14 @@ public sealed class SimpleReporterTests
     {
         var doc = new FakeStructuraDocument(
             "{ \"currency\": \"RUB\" }",
-            new List<DocumentChange>
-            {
+            new List<DocumentChange> {
                 new DocumentChange("/currency", new TextSpan(15, 5), "\"RUB\"", "\"USD\""),
             });
         var sw = new StringWriter();
 
         SimpleReporter.Print(doc, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().Contain("1 change(s):");
         output.Should().Contain("  /currency: \"RUB\" → \"USD\"");
     }
@@ -43,8 +42,7 @@ public sealed class SimpleReporterTests
     {
         var doc = new FakeStructuraDocument(
             "irrelevant",
-            new List<DocumentChange>
-            {
+            new List<DocumentChange> {
                 new DocumentChange("/version", new TextSpan(0, 1), "7", "42"),
                 new DocumentChange("/currency", new TextSpan(2, 5), "\"RUB\"", "\"USD\""),
                 new DocumentChange("/is_priority", new TextSpan(8, 4), "true", "false"),
@@ -53,7 +51,7 @@ public sealed class SimpleReporterTests
 
         SimpleReporter.Print(doc, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().StartWith("3 change(s):");
         output.Should().Contain("/version: 7 → 42");
         output.Should().Contain("/currency: \"RUB\" → \"USD\"");

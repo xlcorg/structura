@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -21,22 +22,22 @@ public sealed class StructuraJsonGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var jsonFiles = context.AdditionalTextsProvider
+        IncrementalValuesProvider<AdditionalText> jsonFiles = context.AdditionalTextsProvider
             .Where(static f => f.Path.EndsWith(".json",
                 StringComparison.OrdinalIgnoreCase));
 
-        var models = jsonFiles.Select(static (file, ct) =>
+        IncrementalValuesProvider<(string className, List<GenProperty> props)> models = jsonFiles.Select(static (file, ct) =>
         {
-            var text      = file.GetText(ct)?.ToString() ?? string.Empty;
-            var fileName  = Path.GetFileName(file.Path);
-            var className = ClassNameDeriver.Derive(fileName);
-            var props     = GeneratorJsonParser.ParseRootProperties(text);
+            string text      = file.GetText(ct)?.ToString() ?? string.Empty;
+            string? fileName  = Path.GetFileName(file.Path);
+            string className = ClassNameDeriver.Derive(fileName);
+            List<GenProperty> props     = GeneratorJsonParser.ParseRootProperties(text);
             return (className, props);
         });
 
         context.RegisterSourceOutput(models, static (spc, model) =>
         {
-            var code = ModelEmitter.Emit(model.className, model.props);
+            string code = ModelEmitter.Emit(model.className, model.props);
             spc.AddSource(
                 $"{model.className}.g.cs",
                 SourceText.From(code, Encoding.UTF8));

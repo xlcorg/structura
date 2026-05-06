@@ -17,9 +17,9 @@ internal static class ModelEmitter
         var usedNames = new HashSet<string>(StringComparer.Ordinal);
         var scalars = new List<ScalarInfo>();
 
-        foreach (var prop in properties)
+        foreach (GenProperty? prop in properties)
         {
-            if (!TryGetScalarInfo(prop, usedNames, out var info))
+            if (!TryGetScalarInfo(prop, usedNames, out ScalarInfo? info))
             {
                 continue;
             }
@@ -51,7 +51,7 @@ internal static class ModelEmitter
         sb.AppendLine("    private readonly StructuraDocumentContext _ctx;");
 
         // ── Span + value fields ───────────────────────────────────────────────
-        foreach (var s in scalars)
+        foreach (ScalarInfo? s in scalars)
         {
             sb.AppendLine();
             sb.Append("    private readonly TextSpan _").Append(s.CamelName).AppendLine("ValueSpan;");
@@ -65,7 +65,7 @@ internal static class ModelEmitter
         sb.AppendLine("        _ctx = new StructuraDocumentContext(source);");
         sb.AppendLine();
 
-        foreach (var s in scalars)
+        foreach (ScalarInfo? s in scalars)
         {
             EmitCtorAssignment(sb, s);
         }
@@ -86,7 +86,7 @@ internal static class ModelEmitter
         sb.AppendLine("    }");
 
         // ── Properties ────────────────────────────────────────────────────────
-        foreach (var s in scalars)
+        foreach (ScalarInfo? s in scalars)
         {
             sb.AppendLine();
             sb.Append("    public ").Append(s.CSharpType).Append(' ').AppendLine(s.PascalName);
@@ -162,8 +162,8 @@ internal static class ModelEmitter
                 return false; // object / array → skip
         }
 
-        var pascalName = IdentifierSanitizer.Sanitize(prop.Name, usedNames);
-        var camelName  = ToCamel(pascalName);
+        string pascalName = IdentifierSanitizer.Sanitize(prop.Name, usedNames);
+        string camelName  = ToCamel(pascalName);
 
         info = new ScalarInfo(
             jsonKey:     prop.Name,
@@ -178,12 +178,15 @@ internal static class ModelEmitter
     }
 
     /// <summary>Local variable name for a <c>root.RequireProperty(key)</c> call.</summary>
-    private static string PropVar(string jsonKey) => CamelCase(jsonKey) + "Prop";
+    private static string PropVar(string jsonKey)
+    {
+        return CamelCase(jsonKey) + "Prop";
+    }
 
     /// <summary>camelCase from a JSON key (used for local variable naming).</summary>
     private static string CamelCase(string jsonKey)
     {
-        var pascal = IdentifierSanitizer.ToPascalCase(jsonKey);
+        string pascal = IdentifierSanitizer.ToPascalCase(jsonKey);
         return ToCamel(pascal);
     }
 
@@ -219,7 +222,7 @@ internal static class ModelEmitter
 
     private static void EmitCtorAssignment(StringBuilder sb, ScalarInfo s)
     {
-        var propVar = s.CamelName + "Prop";
+        string propVar = s.CamelName + "Prop";
         sb.Append("        var ").Append(propVar)
           .Append(" = root.RequireProperty(\"").Append(s.JsonKey).AppendLine("\");");
         sb.Append("        _").Append(s.CamelName).Append("ValueSpan = ").Append(propVar).AppendLine(".ValueSpan;");

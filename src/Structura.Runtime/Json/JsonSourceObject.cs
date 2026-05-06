@@ -11,7 +11,7 @@ public sealed class JsonSourceObject : JsonSourceNode
 
     public JsonSourceProperty? FindProperty(string name)
     {
-        foreach (var property in Properties)
+        foreach (JsonSourceProperty property in Properties)
         {
             if (string.Equals(property.Name, name, StringComparison.Ordinal))
             {
@@ -22,6 +22,8 @@ public sealed class JsonSourceObject : JsonSourceNode
     }
 
     public JsonSourceProperty RequireProperty(string name)
-        => FindProperty(name)
+    {
+        return FindProperty(name)
             ?? throw new InvalidOperationException($"Required JSON property '{name}' is missing.");
+    }
 }

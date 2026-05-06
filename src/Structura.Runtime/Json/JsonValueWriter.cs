@@ -21,7 +21,7 @@ public static class JsonValueWriter
 
         var sb = new StringBuilder(value.Length + 2);
         sb.Append('"');
-        foreach (var c in value)
+        foreach (char c in value)
         {
             switch (c)
             {
@@ -50,17 +50,29 @@ public static class JsonValueWriter
     }
 
     public static string WriteInt64(long value)
-        => value.ToString(CultureInfo.InvariantCulture);
+    {
+        return value.ToString(CultureInfo.InvariantCulture);
+    }
 
     public static string WriteInt32(int value)
-        => value.ToString(CultureInfo.InvariantCulture);
+    {
+        return value.ToString(CultureInfo.InvariantCulture);
+    }
 
     public static string WriteDouble(double value)
-        => value.ToString("R", CultureInfo.InvariantCulture);
+    {
+        return value.ToString("R", CultureInfo.InvariantCulture);
+    }
 
     public static string WriteDecimal(decimal value)
-        => value.ToString(CultureInfo.InvariantCulture);
+    {
+        return value.ToString(CultureInfo.InvariantCulture);
+    }
 
     public static string WriteBoolean(bool value)
-        => value ? "true" : "false";
+    {
+        return value
+            ? "true"
+            : "false";
+    }
 }

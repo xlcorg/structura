@@ -23,7 +23,7 @@ public sealed class TextSpanTests
     [Fact]
     public void FromBounds_ThrowsWhenEndBeforeStart()
     {
-        var act = () => TextSpan.FromBounds(8, 3);
+        Func<TextSpan> act = () => TextSpan.FromBounds(8, 3);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 

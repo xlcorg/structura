@@ -11,7 +11,9 @@ public sealed class StructuraDocumentContextTests
     private const string Source = "{\"currency\":\"RUB\"}";
 
     private static TextSpan SpanOf(string source, string fragment)
-        => new(source.IndexOf(fragment, StringComparison.Ordinal), fragment.Length);
+    {
+        return new TextSpan(source.IndexOf(fragment, StringComparison.Ordinal), fragment.Length);
+    }
 
     [Fact]
     public void NoMutation_ApplyEdits_ReturnsSourceByteIdentical()
@@ -27,14 +29,14 @@ public sealed class StructuraDocumentContextTests
     public void Record_PatchesOnlyTheTargetSpan()
     {
         var ctx = new StructuraDocumentContext(Source);
-        var span = SpanOf(Source, "RUB");
+        TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
 
         ctx.HasChanges.Should().BeTrue();
         ctx.ApplyEdits().Should().Be("{\"currency\":\"USD\"}");
 
-        var change = ctx.Changes.Should().ContainSingle().Which;
+        DocumentChange? change = ctx.Changes.Should().ContainSingle().Which;
         change.Path.Should().Be("/currency");
         change.Span.Should().Be(span);
         change.OldText.Should().Be("RUB");
@@ -45,7 +47,7 @@ public sealed class StructuraDocumentContextTests
     public void Record_ResettingToOriginal_DropsChange()
     {
         var ctx = new StructuraDocumentContext(Source);
-        var span = SpanOf(Source, "RUB");
+        TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
         ctx.Record("/currency", span, "RUB");
@@ -59,7 +61,7 @@ public sealed class StructuraDocumentContextTests
     public void Record_SecondMutationAtSamePath_ReplacesEdit()
     {
         var ctx = new StructuraDocumentContext(Source);
-        var span = SpanOf(Source, "RUB");
+        TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
         ctx.Record("/currency", span, "EUR");

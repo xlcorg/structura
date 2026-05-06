@@ -10,8 +10,10 @@ namespace Structura.UnitTests.Generator;
 
 public sealed class IdentifierSanitizerTests
 {
-    private static string Sanitize(string key) =>
-        IdentifierSanitizer.Sanitize(key, new HashSet<string>());
+    private static string Sanitize(string key)
+    {
+        return IdentifierSanitizer.Sanitize(key, new HashSet<string>());
+    }
 
     [Theory]
     [InlineData("order_id",           "OrderId")]
@@ -58,9 +60,9 @@ public sealed class IdentifierSanitizerTests
     {
         var used = new HashSet<string>();
 
-        var first  = IdentifierSanitizer.Sanitize("currency", used);
-        var second = IdentifierSanitizer.Sanitize("currency", used);
-        var third  = IdentifierSanitizer.Sanitize("currency", used);
+        string first  = IdentifierSanitizer.Sanitize("currency", used);
+        string second = IdentifierSanitizer.Sanitize("currency", used);
+        string third  = IdentifierSanitizer.Sanitize("currency", used);
 
         first.Should().Be("Currency");
         second.Should().Be("Currency2");

@@ -17,14 +17,17 @@ namespace Structura.IntegrationTests.Json;
 /// </summary>
 public sealed class OrderSampleJsonGeneratedTests
 {
-    private static string LoadSample() => File.ReadAllText("order.sample.json");
+    private static string LoadSample()
+    {
+        return File.ReadAllText("order.sample.json");
+    }
 
     // ── Round-trip without mutation ───────────────────────────────────────────
 
     [Fact]
     public void NoMutation_ToJson_IsByteIdentical()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
 
         order.ToJson().Should().Be(json);
@@ -36,11 +39,11 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void StringMutation_PatchesOnlyTheValueLiteral()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
         modified.Should().Contain("\"currency\": \"USD\"");
         modified.Should().Contain("\"version\": 7");   // untouched
     }
@@ -48,7 +51,7 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void RepeatedStringMutation_KeepsLatestValue()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
         order.Currency = "EUR";
@@ -61,7 +64,7 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void ResettingStringToOriginal_DropsEdit()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
         order.Currency = "RUB"; // restore original
@@ -75,11 +78,11 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void LongMutation_PatchesOnlyTheValueLiteral()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Version = 42;
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
         modified.Should().Contain("\"version\": 42");
         modified.Should().Contain("\"currency\": \"RUB\""); // untouched
     }
@@ -89,11 +92,11 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void DecimalMutation_PatchesOnlyTheValueLiteral()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.TotalAmount = 999.99m;
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
         modified.Should().Contain("\"total_amount\": 999.99");
         modified.Should().Contain("\"currency\": \"RUB\""); // untouched
     }
@@ -103,11 +106,11 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void BoolMutation_PatchesOnlyTheValueLiteral()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.IsPriority = false;
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
         modified.Should().Contain("\"is_priority\": false");
         modified.Should().Contain("\"version\": 7"); // untouched
     }
@@ -124,7 +127,7 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void NullableString_SetValue_WritesQuotedString()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.UpdatedAtUtc = "2026-06-01T00:00:00Z";
 
@@ -134,7 +137,7 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void NullableString_SetNull_WritesNullLiteral()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.UpdatedAtUtc = "2026-06-01T00:00:00Z";
         order.UpdatedAtUtc = null; // back to null literal
@@ -149,14 +152,14 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void MultipleMutations_AllPatchedCorrectly()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency    = "EUR";
         order.Version     = 99;
         order.IsPriority  = false;
         order.TotalAmount = 0m;
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
         modified.Should().Contain("\"currency\": \"EUR\"");
         modified.Should().Contain("\"version\": 99");
         modified.Should().Contain("\"is_priority\": false");
@@ -168,12 +171,12 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void UntouchedRegions_AreByteIdentical()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
 
-        var modified = order.ToJson();
-        var change   = ((IStructuraDocument)order).Changes.Single();
+        string modified = order.ToJson();
+        DocumentChange change   = ((IStructuraDocument)order).Changes.Single();
 
         modified[..change.Span.Start]
             .Should().Be(json[..change.Span.Start]);
@@ -187,17 +190,17 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void Changes_ExposeJsonPointerPathsAndSpans()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
         order.Version  = 42;
 
-        var changes = ((IStructuraDocument)order).Changes;
+        IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)order).Changes;
         // Changes are sorted by Span.Start (position in document).
         // In order.sample.json: "version" (line 8) precedes "currency" (line 10).
         changes.Select(c => c.Path).Should().Equal("/version", "/currency");
 
-        var currencyChange = changes.Single(c => c.Path == "/currency");
+        DocumentChange currencyChange = changes.Single(c => c.Path == "/currency");
         currencyChange.OldText.Should().Be("\"RUB\"");
         currencyChange.NewText.Should().Be("\"USD\"");
         json.Substring(currencyChange.Span.Start, currencyChange.Span.Length)
@@ -209,11 +212,11 @@ public sealed class OrderSampleJsonGeneratedTests
     [Fact]
     public void NestedObjectsAndArrays_PreservedVerbatimAfterScalarMutation()
     {
-        var json  = LoadSample();
+        string json  = LoadSample();
         var order = json.ParseJson<OrderSampleJson>();
         order.Currency = "USD";
 
-        var modified = order.ToJson();
+        string modified = order.ToJson();
 
         // The customer nested object must be byte-for-byte identical.
         modified.Should().Contain("\"customer\": {");

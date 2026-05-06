@@ -17,7 +17,12 @@ public readonly record struct TextSpan(int Start, int Length)
     }
 
     public bool IntersectsWith(TextSpan other)
-        => Start < other.End && other.Start < End;
+    {
+        return Start < other.End && other.Start < End;
+    }
 
-    public override string ToString() => $"[{Start}..{End})";
+    public override string ToString()
+    {
+        return $"[{Start}..{End})";
+    }
 }

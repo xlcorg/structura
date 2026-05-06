@@ -15,7 +15,13 @@
         <ProjectReference Include="..\Structura.Reporting\Structura.Reporting.csproj" />
         <ProjectReference Include="..\Structura.Runtime\Structura.Runtime.csproj" />
     </ItemGroup>
-
+  
     <Import Project="..\Structura.Generator\build\Structura.Generator.props" />
-
+  
+    <ItemGroup>
+        <AdditionalFiles Include="Samples/*.json"/>
+        <AdditionalFiles Include="Samples/*.xml"/>
+        <None Include="Samples/*.json" CopyToOutputDirectory="PreserveNewest"/>
+        <None Include="Samples/*.xml" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
 </Project>

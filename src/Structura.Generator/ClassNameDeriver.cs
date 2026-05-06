@@ -20,10 +20,10 @@ internal static class ClassNameDeriver
             return "UnknownDocument";
         }
 
-        var parts = fileName.Split('.');
+        string[] parts = fileName.Split('.');
         var sb = new StringBuilder(fileName.Length);
 
-        foreach (var part in parts)
+        foreach (string part in parts)
         {
             if (string.IsNullOrEmpty(part))
             {

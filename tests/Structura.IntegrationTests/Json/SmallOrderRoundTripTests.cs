@@ -112,10 +112,10 @@ public sealed class SmallOrderRoundTripTests
         order.Currency = "USD";
         order.Version = 42;
 
-        var changes = ((IStructuraDocument)order).Changes;
+        IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)order).Changes;
 
         changes.Select(c => c.Path).Should().Equal("/currency", "/version");
-        var currencyChange = changes[0];
+        DocumentChange currencyChange = changes[0];
         currencyChange.OldText.Should().Be("\"RUB\"");
         currencyChange.NewText.Should().Be("\"USD\"");
         Source.Substring(currencyChange.Span.Start, currencyChange.Span.Length)
@@ -127,9 +127,9 @@ public sealed class SmallOrderRoundTripTests
     {
         var order = Source.ParseJson<SmallOrder>();
         order.Currency = "USD";
-        var modified = order.ToJson();
+        string modified = order.ToJson();
 
-        var change = ((IStructuraDocument)order).Changes.Single();
+        DocumentChange change = ((IStructuraDocument)order).Changes.Single();
 
         modified[..change.Span.Start].Should().Be(Source[..change.Span.Start]);
         modified[(change.Span.Start + change.NewText.Length)..]

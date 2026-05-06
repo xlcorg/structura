@@ -13,5 +13,7 @@ public static class StructuraJsonExtensions
     /// against it when its properties are mutated.
     /// </summary>
     public static T ParseJson<T>(this string json) where T : IStructuraJsonDocument<T>
-        => T.ParseFromJson(json);
+    {
+        return T.ParseFromJson(json);
+    }
 }

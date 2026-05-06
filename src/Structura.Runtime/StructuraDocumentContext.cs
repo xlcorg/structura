@@ -8,8 +8,8 @@ namespace Structura.Runtime;
 /// </summary>
 public sealed class StructuraDocumentContext
 {
-    private readonly TextEditList _edits = new();
-    private readonly Dictionary<string, DocumentChange> _changesByPath = new(StringComparer.Ordinal);
+    private readonly TextEditList _edits = new TextEditList();
+    private readonly Dictionary<string, DocumentChange> _changesByPath = new Dictionary<string, DocumentChange>(StringComparer.Ordinal);
 
     public StructuraDocumentContext(string originalText)
     {
@@ -42,7 +42,7 @@ public sealed class StructuraDocumentContext
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(replacement);
 
-        var oldText = OriginalText.Substring(originalSpan.Start, originalSpan.Length);
+        string oldText = OriginalText.Substring(originalSpan.Start, originalSpan.Length);
         if (string.Equals(oldText, replacement, StringComparison.Ordinal))
         {
             _edits.Remove(originalSpan);
@@ -53,5 +53,8 @@ public sealed class StructuraDocumentContext
         _changesByPath[path] = new DocumentChange(path, originalSpan, oldText, replacement);
     }
 
-    public string ApplyEdits() => _edits.Apply(OriginalText);
+    public string ApplyEdits()
+    {
+        return _edits.Apply(OriginalText);
+    }
 }

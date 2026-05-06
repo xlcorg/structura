@@ -42,7 +42,7 @@ public sealed class OrderSampleJsonReportingTests
 
         SimpleReporter.Print(order, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().Contain("1 change(s):");
         output.Should().Contain("/currency: \"RUB\" → \"USD\"");
     }
@@ -58,7 +58,7 @@ public sealed class OrderSampleJsonReportingTests
 
         SimpleReporter.Print(order, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().StartWith("3 change(s):");
         output.Should().Contain("/currency: \"RUB\" → \"USD\"");
         output.Should().Contain("/version: 7 → 42");
@@ -87,7 +87,7 @@ public sealed class OrderSampleJsonReportingTests
 
         ConsoleDiffReporter.Print(order, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().Contain("@@ /currency (line ");
         output.Should().Contain("- ").And.Contain("\"RUB\"");
         output.Should().Contain("+ ").And.Contain("\"USD\"");
@@ -104,7 +104,7 @@ public sealed class OrderSampleJsonReportingTests
 
         ConsoleDiffReporter.Print(order, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
 
         // Three @@ hunk headers, in document-position order:
         // is_priority (line 7), version (line 8), currency (line 10).

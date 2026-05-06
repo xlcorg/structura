@@ -13,9 +13,9 @@ public sealed class JsonSourceParserTests
     public void Parse_String_PreservesLiteralSpanIncludingQuotes()
     {
         var src = "\"hello\"";
-        var node = JsonSourceParser.Parse(src);
+        JsonSourceNode node = JsonSourceParser.Parse(src);
 
-        var s = node.Should().BeOfType<JsonSourceString>().Which;
+        JsonSourceString? s = node.Should().BeOfType<JsonSourceString>().Which;
         s.Value.Should().Be("hello");
         s.Span.Should().Be(new TextSpan(0, src.Length));
     }
@@ -24,7 +24,7 @@ public sealed class JsonSourceParserTests
     public void Parse_StringWithEscapes_DecodesValueAndCoversWholeLiteral()
     {
         var src = "\"a\\nb\\\"c\\u0041\"";
-        var node = JsonSourceParser.Parse(src);
+        JsonSourceNode node = JsonSourceParser.Parse(src);
 
         var s = (JsonSourceString)node;
         s.Value.Should().Be("a\nb\"cA");
@@ -41,8 +41,8 @@ public sealed class JsonSourceParserTests
     [InlineData("-2.5e-3")]
     public void Parse_Number_PreservesOriginalLiteral(string literal)
     {
-        var node = JsonSourceParser.Parse(literal);
-        var n = node.Should().BeOfType<JsonSourceNumber>().Which;
+        JsonSourceNode node = JsonSourceParser.Parse(literal);
+        JsonSourceNumber? n = node.Should().BeOfType<JsonSourceNumber>().Which;
         n.Literal.Should().Be(literal);
         n.Span.Should().Be(new TextSpan(0, literal.Length));
     }
@@ -63,11 +63,11 @@ public sealed class JsonSourceParserTests
 
         root.Properties.Should().HaveCount(2);
 
-        var a = root.Properties[0];
+        JsonSourceProperty a = root.Properties[0];
         a.Name.Should().Be("a");
         src.Substring(a.ValueSpan.Start, a.ValueSpan.Length).Should().Be("1");
 
-        var b = root.Properties[1];
+        JsonSourceProperty b = root.Properties[1];
         b.Name.Should().Be("b");
         src.Substring(b.ValueSpan.Start, b.ValueSpan.Length).Should().Be("\"x\"");
     }
@@ -101,7 +101,7 @@ public sealed class JsonSourceParserTests
     [Fact]
     public void Parse_LeadingAndTrailingWhitespace_IsAllowed()
     {
-        var node = JsonSourceParser.Parse("\n  42  \n");
+        JsonSourceNode node = JsonSourceParser.Parse("\n  42  \n");
         ((JsonSourceNumber)node).Literal.Should().Be("42");
     }
 
@@ -120,7 +120,7 @@ public sealed class JsonSourceParserTests
     [InlineData("\"a\"\"b\"")]    // two roots
     public void Parse_InvalidJson_Throws(string input)
     {
-        var act = () => JsonSourceParser.Parse(input);
+        Func<JsonSourceNode> act = () => JsonSourceParser.Parse(input);
         act.Should().Throw<JsonParseException>();
     }
 
@@ -128,7 +128,7 @@ public sealed class JsonSourceParserTests
     public void Parse_RequireProperty_ThrowsWhenMissing()
     {
         var root = (JsonSourceObject)JsonSourceParser.Parse("{\"a\":1}");
-        var act = () => root.RequireProperty("missing");
+        Func<JsonSourceProperty> act = () => root.RequireProperty("missing");
         act.Should().Throw<InvalidOperationException>();
     }
 }

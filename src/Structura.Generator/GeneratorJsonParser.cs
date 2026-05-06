@@ -18,7 +18,10 @@ internal sealed class GenDecimalValue : GenValue { }
 internal sealed class GenBoolValue : GenValue
 {
     public bool Value { get; }
-    public GenBoolValue(bool value) => Value = value;
+    public GenBoolValue(bool value)
+    {
+        Value = value;
+    }
 }
 
 /// <summary>Nested object — skipped by the emitter in V1.</summary>
@@ -79,7 +82,7 @@ internal static class GeneratorJsonParser
                     break;
                 }
 
-                var key = ReadString(json, ref p);
+                string key = ReadString(json, ref p);
                 SkipWhitespace(json, ref p);
 
                 if (p >= json.Length || json[p] != ':')
@@ -90,7 +93,7 @@ internal static class GeneratorJsonParser
                 p++; // consume ':'
                 SkipWhitespace(json, ref p);
 
-                var value = ClassifyValue(json, ref p);
+                GenValue value = ClassifyValue(json, ref p);
                 result.Add(new GenProperty(key, value));
 
                 SkipWhitespace(json, ref p);
@@ -128,7 +131,7 @@ internal static class GeneratorJsonParser
     {
         while (p < json.Length)
         {
-            var c = json[p];
+            char c = json[p];
             if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
             {
                 p++;
@@ -148,11 +151,11 @@ internal static class GeneratorJsonParser
     private static string ReadString(string json, ref int p)
     {
         p++; // consume opening '"'
-        var start = p;
+        int start = p;
 
         while (p < json.Length)
         {
-            var c = json[p];
+            char c = json[p];
             if (c == '\\')
             {
                 p += 2; // skip escape
@@ -161,7 +164,7 @@ internal static class GeneratorJsonParser
 
             if (c == '"')
             {
-                var s = json.Substring(start, p - start);
+                string s = json.Substring(start, p - start);
                 p++; // consume closing '"'
                 return s;
             }
@@ -179,7 +182,7 @@ internal static class GeneratorJsonParser
             throw new InvalidOperationException("Unexpected end of JSON.");
         }
 
-        var c = json[p];
+        char c = json[p];
 
         switch (c)
         {
@@ -223,7 +226,7 @@ internal static class GeneratorJsonParser
 
         while (p < json.Length)
         {
-            var c = json[p];
+            char c = json[p];
             if (c == '\\')
             {
                 p += 2;
@@ -265,7 +268,7 @@ internal static class GeneratorJsonParser
 
         while (p < json.Length && depth > 0)
         {
-            var c = json[p];
+            char c = json[p];
 
             if (c == '"')
             {

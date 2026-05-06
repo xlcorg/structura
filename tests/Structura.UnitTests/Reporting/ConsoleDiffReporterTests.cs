@@ -44,7 +44,7 @@ public sealed class ConsoleDiffReporterTests
 
         ConsoleDiffReporter.Print(doc, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().Contain("@@ /currency (line 2) @@");
         output.Should().Contain("-   \"currency\": \"RUB\",");
         output.Should().Contain("+   \"currency\": \"USD\",");
@@ -79,7 +79,7 @@ public sealed class ConsoleDiffReporterTests
 
         ConsoleDiffReporter.Print(doc, sw);
 
-        string output = sw.ToString();
+        var output = sw.ToString();
         output.Should().Contain("@@ /currency");
         output.Should().Contain("@@ /version");
 

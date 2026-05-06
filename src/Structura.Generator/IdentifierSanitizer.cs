@@ -17,13 +17,13 @@ internal static class IdentifierSanitizer
     /// </summary>
     public static string Sanitize(string jsonKey, HashSet<string> usedNames)
     {
-        var candidate = ToPascalCase(jsonKey);
+        string candidate = ToPascalCase(jsonKey);
         if (string.IsNullOrEmpty(candidate))
         {
             candidate = "_Field";
         }
 
-        var result = candidate;
+        string result = candidate;
         var suffix = 2;
         while (!usedNames.Add(result))
         {
@@ -49,7 +49,7 @@ internal static class IdentifierSanitizer
         var sb = new StringBuilder(jsonKey.Length);
         var newToken = true;
 
-        foreach (var c in jsonKey)
+        foreach (char c in jsonKey)
         {
             if (c == '-' || c == '_' || c == ' ' || c == '\t' || c == '.')
             {
