@@ -1,13 +1,16 @@
-// Demo host. End-to-end JSON pipeline: ParseJson<T> -> mutate -> ToJson +
-// SimpleReporter / ConsoleDiffReporter. See CLAUDE.md for the target API and
-// Samples/order.sample.json for the document it operates on.
+// Demo host. End-to-end JSON + XML pipelines: ParseJson<T> / ParseXml<T> ->
+// mutate -> ToJson / ToXml + SimpleReporter / ConsoleDiffReporter. See
+// CLAUDE.md for the target API and Samples/*.{json,xml} for the documents.
 
+using Structura.Common;
 using Structura.Generated;
 using Structura.Reporting;
 using Structura.Runtime;
 
-string samplePath = Path.Combine(AppContext.BaseDirectory, "Samples", "order.sample.json");
-string orderJson = File.ReadAllText(samplePath);
+// ── JSON pipeline ─────────────────────────────────────────────────────────────
+
+string orderJsonPath = Path.Combine(AppContext.BaseDirectory, "Samples", "order.sample.json");
+string orderJson = orderJsonPath.ReadAllText();
 
 var order = orderJson.ParseJson<OrderSampleJson>();
 
@@ -27,3 +30,21 @@ Console.WriteLine();
 
 Console.WriteLine("=== Diff (ConsoleDiffReporter) ===");
 ConsoleDiffReporter.Print(order);
+Console.WriteLine();
+
+// ── XML pipeline ──────────────────────────────────────────────────────────────
+
+string blrwblPath = Path.Combine(AppContext.BaseDirectory, "Samples", "blrwbl.sample.xml");
+string blrwblXml = blrwblPath.ReadAllText();
+
+var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
+
+string roundTripped = waybill.ToXml();
+bool identical = string.Equals(roundTripped, blrwblXml, StringComparison.Ordinal);
+
+Console.WriteLine("=== BLRWBL XML round-trip ===");
+Console.WriteLine($"Parsed without exception. ToXml() identical to source: {identical}");
+Console.WriteLine();
+
+Console.WriteLine("=== BLRWBL Changes (no mutations applied) ===");
+SimpleReporter.Print(waybill);

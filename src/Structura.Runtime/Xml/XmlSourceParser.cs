@@ -389,7 +389,7 @@ public static class XmlSourceParser
             {
                 return false;
             }
-            for (int i = 0; i < s.Length; i++)
+            for (var i = 0; i < s.Length; i++)
             {
                 if (_source[_pos + i] != s[i])
                 {

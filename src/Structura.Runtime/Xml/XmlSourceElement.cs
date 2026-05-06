@@ -44,7 +44,7 @@ public sealed class XmlSourceElement : XmlSourceNode
 
     public XmlSourceElement? FindElement(string name)
     {
-        for (int i = 0; i < Children.Count; i++)
+        for (var i = 0; i < Children.Count; i++)
         {
             if (Children[i] is XmlSourceElement element
                 && string.Equals(element.Name, name, StringComparison.Ordinal))
@@ -64,7 +64,7 @@ public sealed class XmlSourceElement : XmlSourceNode
 
     public XmlSourceAttribute? FindAttribute(string name)
     {
-        for (int i = 0; i < Attributes.Count; i++)
+        for (var i = 0; i < Attributes.Count; i++)
         {
             if (string.Equals(Attributes[i].Name, name, StringComparison.Ordinal))
             {
