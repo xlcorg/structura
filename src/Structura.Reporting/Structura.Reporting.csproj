@@ -1,3 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Structura.Runtime\Structura.Runtime.csproj" />
+  </ItemGroup>
 
 </Project>

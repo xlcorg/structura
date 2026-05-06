@@ -12,5 +12,8 @@
     <Project Path="src/Structura.Runtime/Structura.Runtime.csproj" />
     <Project Path="src/Structura/Structura.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Structura.IntegrationTests/Structura.IntegrationTests.csproj" />
+    <Project Path="tests/Structura.UnitTests/Structura.UnitTests.csproj" />
+  </Folder>
 </Solution>
