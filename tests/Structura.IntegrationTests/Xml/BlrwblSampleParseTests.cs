@@ -90,4 +90,78 @@ public sealed class BlrwblSampleParseTests
         doc.ToXml().Should().Be(source);
         ((IStructuraDocument)doc).Changes.Should().BeEmpty();
     }
+
+    // ── Mutation contract (wrapper-flattening exposes 13 scalars) ────────────
+
+    [Fact]
+    public void GeneratedModel_FlatteningExposesCurrency_AsScalarProperty()
+    {
+        var doc = LoadSample().ParseXml<BlrwblSampleXml>();
+        doc.Currency.Should().Be("BYN");
+    }
+
+    [Fact]
+    public void GeneratedModel_StringPropertyWithSlashAndHyphen_RoundTrips()
+    {
+        // ContractID = "56/456-6678" — has both '/' and '-', must classify as string.
+        var doc = LoadSample().ParseXml<BlrwblSampleXml>();
+        doc.ContractID.Should().Be("56/456-6678");
+    }
+
+    [Fact]
+    public void MutatingCurrency_PatchesOnlyTheInnerSpan()
+    {
+        string source = LoadSample();
+        var doc = source.ParseXml<BlrwblSampleXml>();
+
+        doc.Currency = "USD";
+
+        string modified = doc.ToXml();
+        modified.Should().Contain("<Currency>USD</Currency>");
+        // The original BYN literal is gone.
+        modified.Should().NotContain("<Currency>BYN</Currency>");
+
+        DocumentChange change = ((IStructuraDocument)doc).Changes.Single();
+        change.OldText.Should().Be("BYN");
+        change.NewText.Should().Be("USD");
+
+        // Bytes outside the changed span are byte-identical with the original.
+        modified[..change.Span.Start].Should().Be(source[..change.Span.Start]);
+        modified[(change.Span.Start + change.NewText.Length)..]
+            .Should().Be(source[change.Span.End..]);
+    }
+
+    [Fact]
+    public void Changes_PathIsRootRelative()
+    {
+        var doc = LoadSample().ParseXml<BlrwblSampleXml>();
+        doc.Currency = "USD";
+
+        ((IStructuraDocument)doc).Changes.Single().Path.Should().Be("/Currency");
+    }
+
+    [Fact]
+    public void MutatingScalarLong_FormatsInvariant()
+    {
+        var doc = LoadSample().ParseXml<BlrwblSampleXml>();
+        doc.SealID = 99999;
+
+        doc.ToXml().Should().Contain("<SealID>99999</SealID>");
+    }
+
+    [Fact]
+    public void MultipleMutations_PatchedTogetherWithRootRelativePaths()
+    {
+        var doc = LoadSample().ParseXml<BlrwblSampleXml>();
+        doc.Currency = "USD";
+        doc.SealID = 99999;
+
+        IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)doc).Changes;
+        // Sorted by Span.Start — SealID (line 69) precedes Currency (line 71).
+        changes.Select(c => c.Path).Should().Equal("/SealID", "/Currency");
+
+        string modified = doc.ToXml();
+        modified.Should().Contain("<SealID>99999</SealID>");
+        modified.Should().Contain("<Currency>USD</Currency>");
+    }
 }

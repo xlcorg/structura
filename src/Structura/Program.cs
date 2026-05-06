@@ -39,12 +39,18 @@ string blrwblXml = blrwblPath.ReadAllText();
 
 var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 
-string roundTripped = waybill.ToXml();
-bool identical = string.Equals(roundTripped, blrwblXml, StringComparison.Ordinal);
+waybill.Currency = "USD";
+waybill.SealID = 99999;
 
-Console.WriteLine("=== BLRWBL XML round-trip ===");
-Console.WriteLine($"Parsed without exception. ToXml() identical to source: {identical}");
+string modifiedBlrwbl = waybill.ToXml();
+
+Console.WriteLine("=== Modified BLRWBL XML ===");
+Console.WriteLine(modifiedBlrwbl);
 Console.WriteLine();
 
-Console.WriteLine("=== BLRWBL Changes (no mutations applied) ===");
+Console.WriteLine("=== BLRWBL Changes (SimpleReporter) ===");
 SimpleReporter.Print(waybill);
+Console.WriteLine();
+
+Console.WriteLine("=== BLRWBL Diff (ConsoleDiffReporter) ===");
+ConsoleDiffReporter.Print(waybill);

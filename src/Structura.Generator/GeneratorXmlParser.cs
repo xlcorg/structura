@@ -34,13 +34,24 @@ internal sealed class XmlGenProperty
 
 internal sealed class XmlRootInfo
 {
-    public XmlRootInfo(string rootName, List<XmlGenProperty> scalars)
+    public XmlRootInfo(string rootName, IReadOnlyList<string> wrapperChain, List<XmlGenProperty> scalars)
     {
         RootName = rootName;
+        WrapperChain = wrapperChain;
         Scalars = scalars;
     }
 
+    /// <summary>The literal root element name in the source document.</summary>
     public string RootName { get; }
+
+    /// <summary>
+    /// Names of intermediate envelope elements that the generator descended
+    /// through to reach the effective data root (the element whose direct
+    /// children/attributes are exposed as scalars). Empty when the literal
+    /// root <em>is</em> the effective root.
+    /// </summary>
+    public IReadOnlyList<string> WrapperChain { get; }
+
     public List<XmlGenProperty> Scalars { get; }
 }
 
@@ -48,10 +59,12 @@ internal sealed class XmlRootInfo
 
 /// <summary>
 /// Minimal structural XML scanner that runs inside the source generator
-/// (netstandard2.0 — cannot depend on <c>Structura.Runtime.Xml</c>). Just
-/// enough to enumerate root attributes and root child elements that are
-/// pure-text scalars. On any error returns <see langword="null"/> so the
-/// generator skips the file rather than crashing the build.
+/// (netstandard2.0 — cannot depend on <c>Structura.Runtime.Xml</c>). It
+/// determines the document's effective data root (descending through
+/// single-element envelope wrappers) and enumerates that element's scalar
+/// attributes and pure-text child elements. On any error returns
+/// <see langword="null"/> so the generator skips the file rather than
+/// crashing the build.
 /// </summary>
 internal static class GeneratorXmlParser
 {
@@ -62,111 +75,46 @@ internal static class GeneratorXmlParser
             int p = 0;
             SkipProlog(xml, ref p);
 
-            if (p >= xml.Length || xml[p] != '<')
-            {
-                return null;
-            }
-            p++; // consume '<'
-
-            string rootName = ReadName(xml, ref p);
-            if (rootName.Length == 0)
+            ElementInfo? literalRoot = TryParseElementAt(xml, ref p);
+            if (literalRoot == null)
             {
                 return null;
             }
 
+            // The literal root must be the only top-level element.
+            SkipTrailing(xml, ref p);
+            if (p < xml.Length)
+            {
+                return null;
+            }
+
+            // Walk the wrapper chain. The rule fires only when:
+            //   - 0 attributes, AND
+            //   - 0 pure-text scalar children, AND
+            //   - exactly 1 structural element child.
+            var wrapperChain = new List<string>();
+            ElementInfo current = literalRoot;
+            while (current.Attributes.Count == 0
+                && current.PureTextChildren.Count == 0
+                && current.StructuralChildPositions.Count == 1)
+            {
+                int childStart = current.StructuralChildPositions[0];
+                ElementInfo? next = TryParseElementAt(xml, ref childStart);
+                if (next == null)
+                {
+                    break;
+                }
+                wrapperChain.Add(next.Name);
+                current = next;
+            }
+
+            // Effective root carries the scalars: attributes first, then
+            // pure-text element children, in document order.
             var scalars = new List<XmlGenProperty>();
+            scalars.AddRange(current.Attributes);
+            scalars.AddRange(current.PureTextChildren);
 
-            // Attributes on the root element
-            while (true)
-            {
-                SkipWhitespace(xml, ref p);
-                if (p >= xml.Length)
-                {
-                    return null;
-                }
-                char c = xml[p];
-                if (c == '/' || c == '>')
-                {
-                    break;
-                }
-                XmlGenProperty? attr = ReadAttribute(xml, ref p);
-                if (attr == null)
-                {
-                    return null;
-                }
-                scalars.Add(attr);
-            }
-
-            // Self-closing root → no element children
-            if (xml[p] == '/')
-            {
-                return new XmlRootInfo(rootName, scalars);
-            }
-
-            p++; // consume '>'
-
-            // Walk children of root. The close tag </NAME> MUST appear before
-            // EOF; otherwise we consider the root unterminated and reject.
-            bool sawCloseTag = false;
-            while (p < xml.Length)
-            {
-                SkipWhitespace(xml, ref p);
-                if (p >= xml.Length)
-                {
-                    return null;
-                }
-
-                if (StartsWith(xml, p, "</"))
-                {
-                    sawCloseTag = true;
-                    break;
-                }
-
-                if (StartsWith(xml, p, "<!--"))
-                {
-                    int end = xml.IndexOf("-->", p + 4, StringComparison.Ordinal);
-                    if (end < 0)
-                    {
-                        return null;
-                    }
-                    p = end + 3;
-                    continue;
-                }
-
-                if (StartsWith(xml, p, "<![CDATA["))
-                {
-                    int end = xml.IndexOf("]]>", p + 9, StringComparison.Ordinal);
-                    if (end < 0)
-                    {
-                        return null;
-                    }
-                    p = end + 3;
-                    continue;
-                }
-
-                if (xml[p] != '<')
-                {
-                    // Stray text between tags — skip until next '<'
-                    while (p < xml.Length && xml[p] != '<')
-                    {
-                        p++;
-                    }
-                    continue;
-                }
-
-                XmlGenProperty? child = TryReadChildScalarOrSkip(xml, ref p);
-                if (child != null)
-                {
-                    scalars.Add(child);
-                }
-            }
-
-            if (!sawCloseTag)
-            {
-                return null;
-            }
-
-            return new XmlRootInfo(rootName, scalars);
+            return new XmlRootInfo(literalRoot.Name, wrapperChain, scalars);
         }
         catch
         {
@@ -174,14 +122,35 @@ internal static class GeneratorXmlParser
         }
     }
 
-    /// <summary>
-    /// Tries to read a child element starting at <paramref name="p"/>. If the
-    /// element is a pure-text scalar (only one text run between open and close
-    /// tags), returns an <see cref="XmlGenProperty"/> for it. Otherwise advances
-    /// past the entire element (potentially recursive) and returns null.
-    /// </summary>
-    private static XmlGenProperty? TryReadChildScalarOrSkip(string xml, ref int p)
+    // ── Element parsing (fully populates structural info) ────────────────────
+
+    private sealed class ElementInfo
     {
+        public string Name = string.Empty;
+        public List<XmlGenProperty> Attributes = new List<XmlGenProperty>();
+        public List<XmlGenProperty> PureTextChildren = new List<XmlGenProperty>();
+
+        /// <summary>
+        /// Position (just past the leading <c>&lt;</c>'s match — i.e. the
+        /// index of the open <c>&lt;</c> character itself) of every
+        /// non-pure-text element child encountered while scanning this
+        /// element's content. Used to descend into the wrapper chain.
+        /// </summary>
+        public List<int> StructuralChildPositions = new List<int>();
+    }
+
+    /// <summary>
+    /// Parses a single element starting at <paramref name="p"/> (which must
+    /// point at a <c>&lt;</c>). Advances <paramref name="p"/> to just past
+    /// the closing <c>&gt;</c>. Returns null on any malformed input.
+    /// </summary>
+    private static ElementInfo? TryParseElementAt(string xml, ref int p)
+    {
+        if (p >= xml.Length || xml[p] != '<')
+        {
+            return null;
+        }
+
         int elementStart = p;
         p++; // consume '<'
         string name = ReadName(xml, ref p);
@@ -190,8 +159,10 @@ internal static class GeneratorXmlParser
             return null;
         }
 
-        // Skip attributes on the child element (we do not expose them in V1).
-        while (p < xml.Length)
+        var info = new ElementInfo { Name = name };
+
+        // Attributes
+        while (true)
         {
             SkipWhitespace(xml, ref p);
             if (p >= xml.Length)
@@ -203,7 +174,154 @@ internal static class GeneratorXmlParser
             {
                 break;
             }
-            // Skip the attribute literal name="value" or name='value'.
+            XmlGenProperty? attr = ReadAttribute(xml, ref p);
+            if (attr == null)
+            {
+                return null;
+            }
+            info.Attributes.Add(attr);
+        }
+
+        // Self-closing → no inner content
+        if (xml[p] == '/')
+        {
+            p++;
+            if (p >= xml.Length || xml[p] != '>')
+            {
+                return null;
+            }
+            p++;
+            return info;
+        }
+
+        p++; // consume '>'
+
+        // Inner content. We need to classify each child element as either a
+        // pure-text scalar (record as PureTextChildren) or structural
+        // (record only its start position). We must NOT collect text runs as
+        // pseudo-children — bare text between tags counts as "non-pure-text"
+        // for this element's classification, but for V1 we don't expose it.
+        bool sawCloseTag = false;
+        while (p < xml.Length)
+        {
+            // Non-tag content is whitespace or text. Skip but track that we
+            // saw text so the caller can know "this element isn't an empty
+            // wrapper" if needed. (Currently we don't surface that — it has
+            // no impact on V1 scalar discovery.)
+            if (xml[p] != '<')
+            {
+                while (p < xml.Length && xml[p] != '<')
+                {
+                    p++;
+                }
+                continue;
+            }
+
+            if (StartsWith(xml, p, "</"))
+            {
+                sawCloseTag = true;
+                break;
+            }
+            if (StartsWith(xml, p, "<!--"))
+            {
+                int end = xml.IndexOf("-->", p + 4, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    return null;
+                }
+                p = end + 3;
+                continue;
+            }
+            if (StartsWith(xml, p, "<![CDATA["))
+            {
+                int end = xml.IndexOf("]]>", p + 9, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    return null;
+                }
+                p = end + 3;
+                continue;
+            }
+
+            // It's a child element. Classify it.
+            int childStart = p;
+            ChildClassification? classification = ClassifyChild(xml, ref p);
+            if (classification is null)
+            {
+                return null;
+            }
+            if (classification.PureTextScalar != null)
+            {
+                info.PureTextChildren.Add(classification.PureTextScalar);
+            }
+            else
+            {
+                info.StructuralChildPositions.Add(childStart);
+            }
+        }
+
+        if (!sawCloseTag)
+        {
+            return null;
+        }
+
+        // Consume close tag </name>
+        p += 2; // consume "</"
+        string closeName = ReadName(xml, ref p);
+        if (!string.Equals(closeName, name, StringComparison.Ordinal))
+        {
+            return null;
+        }
+        SkipWhitespace(xml, ref p);
+        if (p >= xml.Length || xml[p] != '>')
+        {
+            return null;
+        }
+        p++;
+
+        return info;
+    }
+
+    private sealed class ChildClassification
+    {
+        public XmlGenProperty? PureTextScalar { get; set; }
+    }
+
+    /// <summary>
+    /// Reads one child element starting at <paramref name="p"/> (which must
+    /// point at <c>&lt;</c>). Returns a classification: either a pure-text
+    /// scalar property, or "structural" (no scalar) when the element has
+    /// attributes, nested elements, or any non-text content. Advances
+    /// <paramref name="p"/> past the element's closing tag in either case.
+    /// Returns null on parse error.
+    /// </summary>
+    private static ChildClassification? ClassifyChild(string xml, ref int p)
+    {
+        p++; // consume '<'
+        string name = ReadName(xml, ref p);
+        if (name.Length == 0)
+        {
+            return null;
+        }
+
+        // Attributes — record presence but skip values. Any attribute disqualifies
+        // this element from being a "pure-text scalar" (we expose root attrs but
+        // not nested attrs in V1).
+        bool hasAttribute = false;
+        while (true)
+        {
+            SkipWhitespace(xml, ref p);
+            if (p >= xml.Length)
+            {
+                return null;
+            }
+            char c = xml[p];
+            if (c == '/' || c == '>')
+            {
+                break;
+            }
+            hasAttribute = true;
+            // Skip `name="value"` or `name='value'` literal.
             ReadName(xml, ref p);
             SkipWhitespace(xml, ref p);
             if (p >= xml.Length || xml[p] != '=')
@@ -230,12 +348,9 @@ internal static class GeneratorXmlParser
             p = valEnd + 1;
         }
 
-        if (p >= xml.Length)
-        {
-            return null;
-        }
+        var result = new ChildClassification();
 
-        // Self-closing → empty string content → emit string scalar.
+        // Self-closing → empty content → string scalar (unless it has attrs).
         if (xml[p] == '/')
         {
             p++;
@@ -244,16 +359,17 @@ internal static class GeneratorXmlParser
                 return null;
             }
             p++;
-            return new XmlGenProperty(name, XmlGenScalarKind.String, isAttribute: false);
+            if (!hasAttribute)
+            {
+                result.PureTextScalar = new XmlGenProperty(name, XmlGenScalarKind.String, isAttribute: false);
+            }
+            return result;
         }
 
-        // Open tag terminator
         p++; // consume '>'
-
-        // Read raw inner content up to matching close tag, tracking whether
-        // we encounter any nested element.
         int contentStart = p;
         bool sawNested = false;
+
         while (p < xml.Length)
         {
             if (StartsWith(xml, p, "</"))
@@ -284,9 +400,11 @@ internal static class GeneratorXmlParser
             if (xml[p] == '<')
             {
                 sawNested = true;
-                // Skip the nested element fully (recursive walk via TryReadChildScalarOrSkip
-                // discards its return value here — we are no longer a scalar).
-                XmlGenProperty? _ = TryReadChildScalarOrSkip(xml, ref p);
+                ChildClassification? _ = ClassifyChild(xml, ref p);
+                if (_ == null)
+                {
+                    return null;
+                }
                 continue;
             }
             p++;
@@ -298,8 +416,7 @@ internal static class GeneratorXmlParser
         }
 
         int contentEnd = p;
-        // Consume close tag </name>
-        p += 2; // </
+        p += 2; // consume "</"
         string closeName = ReadName(xml, ref p);
         if (!string.Equals(closeName, name, StringComparison.Ordinal))
         {
@@ -312,14 +429,14 @@ internal static class GeneratorXmlParser
         }
         p++;
 
-        if (sawNested)
+        // Pure-text scalar requires: no attributes, no nested elements, no CDATA.
+        if (!hasAttribute && !sawNested)
         {
-            return null;
+            string rawText = xml.Substring(contentStart, contentEnd - contentStart);
+            string decoded = DecodeEntities(rawText);
+            result.PureTextScalar = new XmlGenProperty(name, InferKind(decoded), isAttribute: false);
         }
-
-        string rawText = xml.Substring(contentStart, contentEnd - contentStart);
-        string decoded = DecodeEntities(rawText);
-        return new XmlGenProperty(name, InferKind(decoded), isAttribute: false);
+        return result;
     }
 
     private static XmlGenProperty? ReadAttribute(string xml, ref int p)
@@ -371,7 +488,26 @@ internal static class GeneratorXmlParser
                 p = end + 2;
             }
         }
-        // Skip any leading whitespace + comments
+        // Skip leading whitespace + comments
+        while (true)
+        {
+            SkipWhitespace(xml, ref p);
+            if (StartsWith(xml, p, "<!--"))
+            {
+                int end = xml.IndexOf("-->", p + 4, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    return;
+                }
+                p = end + 3;
+                continue;
+            }
+            return;
+        }
+    }
+
+    private static void SkipTrailing(string xml, ref int p)
+    {
         while (true)
         {
             SkipWhitespace(xml, ref p);

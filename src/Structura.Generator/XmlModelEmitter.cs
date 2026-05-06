@@ -83,7 +83,28 @@ internal static class XmlModelEmitter
           .AppendLine("> at root, found <{root.Name}>.\");");
         sb.AppendLine("        }");
         sb.AppendLine();
-        sb.Append("        return new ").Append(className).AppendLine("(source, root);");
+
+        // ── Wrapper chain ────────────────────────────────────────────────────
+        // Descend through any single-element envelope wrappers identified by
+        // the generator. The element passed to the constructor carries the
+        // scalars; everything above stays only as a parse-time validation.
+        if (info.WrapperChain.Count == 0)
+        {
+            sb.Append("        return new ").Append(className).AppendLine("(source, root);");
+        }
+        else
+        {
+            sb.Append("        XmlSourceElement effectiveRoot = root");
+            foreach (string wrapperName in info.WrapperChain)
+            {
+                sb.Append(".RequireElement(\"")
+                  .Append(EscapeForCsString(wrapperName))
+                  .Append("\")");
+            }
+            sb.AppendLine(";");
+            sb.Append("        return new ").Append(className).AppendLine("(source, effectiveRoot);");
+        }
+
         sb.AppendLine("    }");
 
         // ── Properties ───────────────────────────────────────────────────────
