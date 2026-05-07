@@ -78,8 +78,24 @@ internal static class StructuraDiagnostics
 
     public static readonly DiagnosticDescriptor UnsupportedStructuralElement = new DiagnosticDescriptor(
         id: "STR0009",
-        title: "Unsupported XML structural element",
-        messageFormat: "Skipped <{1}> in <{2}> ('{0}'), nested structural object generation is not supported in V1",
+        title: "Unsupported nested structural element",
+        messageFormat: "Skipped '{1}' in '{2}' ('{0}'), nested generation is not supported",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor HeterogeneousArray = new DiagnosticDescriptor(
+        id: "STR0010",
+        title: "Heterogeneous JSON array",
+        messageFormat: "JSON array '{1}' in '{0}' contains items of mixed shapes or incompatible primitive kinds; the property is skipped",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor IndeterminateEmptyArray = new DiagnosticDescriptor(
+        id: "STR0011",
+        title: "Indeterminate empty JSON array",
+        messageFormat: "JSON array '{1}' in '{0}' is empty and has no sibling observations to infer the item type from; the property is skipped",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
