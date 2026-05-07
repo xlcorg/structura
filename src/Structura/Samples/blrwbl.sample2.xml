@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BLRWBL>
+    <DeliveryNote>
+        <DeliveryNoteType>700</DeliveryNoteType>
+        <DocumentID>45679288</DocumentID>
+        <CreationDateTime>20130112124300</CreationDateTime>
+        <FunctionCode>9</FunctionCode>
+        <DeliveryNoteID>002-4810987000544-25375</DeliveryNoteID>
+        <DeliveryNoteDate>20160113</DeliveryNoteDate>
+        <ContractName>Договор</ContractName>
+           <ContractID>56/456-6678</ContractID>
+        <ContractDate>20150113</ContractDate>
+        <WaybillID>6678-45</WaybillID>
+        <Document>
+            <DocumentID>234/20012</DocumentID>
+            <DocumentDate>20150113</DocumentDate>
+            <DocumentName>Опись содержимого контейнера</DocumentName>
+        </Document>
+        <Shipper>
+            <GLN>4810987000544</GLN>
+            <Name>ОАО «Минский завод»</Name>
+            <Address>220043, Республика Беларусь, г. Минск, ул. Козлова, д. 23,
+                административное помещение, к. 405,
+            </Address>
+            <VATRegistrationNumber>788888855</VATRegistrationNumber>
+            <Contact>Директор Иванов И.И.</Contact>
+        </Shipper>
+        <Receiver>
+            <GLN>4810117000635</GLN>
+            <Name>ОАО «Улыбка»</Name>
+            <Address>220045, Республика Беларусь, г. Минск, ул. Первомайская,
+                д. 23,
+            </Address>
+            <VATRegistrationNumber>666777755</VATRegistrationNumber>
+        </Receiver>
+        <FreightPayer>
+            <GLN>4812409900009</GLN>
+            <Name>ОАО «Известный Поставщик»</Name>
+            <Address>220012, Республика Беларусь, г. Минск, ул. Голодеда, д. 23</Address>
+            <VATRegistrationNumber>666777755</VATRegistrationNumber>
+        </FreightPayer>
+        <ShipFrom>
+            <GLN>4810989000009</GLN>
+            <Address>223060, Республика Беларусь, Минский район, 200 м южнее д. Сеница
+            </Address>
+            <Contact>Заведующий складом Петров И. И.</Contact>
+        </ShipFrom>
+        <ShipTo>
+            <GLN>4810047000002</GLN>
+            <Address>220045, Республика Беларусь, г. Минск, ул. Первомайская, д. 23</Address>
+        </ShipTo>
+        <Transporter>
+            <GLN>4812409900009</GLN>
+            <Name>ООО «Перевозки»</Name>
+            <VATRegistrationNumber>666777755
+            </VATRegistrationNumber>
+        </Transporter>
+        <Carrier>
+            <TransportContact>Сидоров И. И.</TransportContact>
+            <DeliveryContact>Водитель Сидоров И. И.</DeliveryContact>
+            <ProxyID>22-2012</ProxyID>
+            <ProxyDate>20150113</ProxyDate>
+            <PartyIssuingProxyName>ОАО «Известный Поставщик»</PartyIssuingProxyName>
+            <QuantityTrip>3</QuantityTrip>
+            <TransportOwnerName>ОАО «Перевозки»</TransportOwnerName>
+            <TransportID>BMW, TP 0524-7</TransportID>
+            <TrailerID>прицеп, A 1234 B-7</TrailerID>
+        </Carrier>
+        <SealID>45625</SealID>
+        <CancelDeliveryNoteID>002-4810987000544-0000000023</CancelDeliveryNoteID>
+        <Currency>BYN</Currency>
+        <DespatchAdviceLogisticUnitLineItem>
+            <LineItem>
+                <LineItemNumber>1</LineItemNumber>
+                <LineItemSign>PROD</LineItemSign>
+                <LineItemID>481098700565</LineItemID>
+                <LineItemName>Хлеб «Ласунок»</LineItemName>
+                <GrossWeightValue>0.01</GrossWeightValue>
+                <QuantityDespatched>40</QuantityDespatched>
+                <LineItemQuantityUOM>PCE</LineItemQuantityUOM>
+                <DespatchUnitQuantityDespatched>2</DespatchUnitQuantityDespatched>
+                <CountryOfOrigin>BY</CountryOfOrigin>
+                <BestBeforeDate>20130522</BestBeforeDate>
+                <TaxRate>20</TaxRate>
+                <AdditionalInformation>Прейскурант N 3456</AdditionalInformation>
+                <LineItemAmountWithoutCharges>1000.00</LineItemAmountWithoutCharges>
+                <LineItemAmountCharges>200.00</LineItemAmountCharges>
+                <LineItemAmount>1200.00</LineItemAmount>
+                <LineItemPrice>10.00</LineItemPrice>
+                <LineItemExtraField>
+                  <FieldName>InventoryId</FieldName>
+                  <FieldValue>123456</FieldValue>
+                </LineItemExtraField>
+                <LineItemExtraField>
+                  <FieldName>ContainerId</FieldName>
+                  <FieldValue>1</FieldValue>
+                </LineItemExtraField>
+            </LineItem>
+            <LineItem>
+                <LineItemNumber>2</LineItemNumber>
+                <LineItemSign>PROD</LineItemSign>
+                <LineItemID>481098700565</LineItemID>
+                <LineItemName>Хлеб «Ласунок»</LineItemName>
+                <GrossWeightValue>0.01</GrossWeightValue>
+                <QuantityDespatched>40</QuantityDespatched>
+                <LineItemQuantityUOM>PCE</LineItemQuantityUOM>
+                <DespatchUnitQuantityDespatched>2</DespatchUnitQuantityDespatched>
+                <CountryOfOrigin>BY</CountryOfOrigin>
+                <BestBeforeDate>20130522</BestBeforeDate>
+                <TaxRate>20</TaxRate>
+                <AdditionalInformation>Прейскурант N 3456</AdditionalInformation>
+                <LineItemAmountWithoutCharges>1000.00</LineItemAmountWithoutCharges>
+                <LineItemAmountCharges>200.00</LineItemAmountCharges>
+                <LineItemAmount>1200.00</LineItemAmount>
+                <LineItemPrice>10.00</LineItemPrice>
+                <LineItemExtraField>
+                  <FieldName>InventoryId</FieldName>
+                  <FieldValue>123455</FieldValue>
+                </LineItemExtraField>
+                <LineItemExtraField>
+                  <FieldName>ContainerId</FieldName>
+                  <FieldValue>2</FieldValue>
+                </LineItemExtraField>
+            </LineItem>
+        </DespatchAdviceLogisticUnitLineItem>
+        <Total>
+            <TotalAmountWithoutCharges>500.00</TotalAmountWithoutCharges>
+            <TotalAmountCharges>100.00</TotalAmountCharges>
+            <TotalAmount>600.00</TotalAmount>
+            <TotalLineItem>10</TotalLineItem>
+            <TotalLineItemQuantity>45</TotalLineItemQuantity>
+            <TotalGrossWeight>1.02</TotalGrossWeight>
+            <TotalDespatchUnitQuantity>14</TotalDespatchUnitQuantity>
+        </Total>
+    </DeliveryNote>
+</BLRWBL>

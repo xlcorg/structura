@@ -122,12 +122,38 @@ public sealed class XmlSourceParserTests
     [InlineData("<root></mismatch>")]
     [InlineData("<root attr=>")]
     [InlineData("<root attr=\"unterminated>")]
-    [InlineData("<root>&badentity;</root>")]
     [InlineData("<root></root><extra/>")]
     public void Parse_InvalidXml_Throws(string input)
     {
         Action act = () => XmlSourceParser.Parse(input);
         act.Should().Throw<XmlParseException>();
+    }
+
+    [Fact]
+    public void Parse_DocType_Skipped_RootSpanStartsAfterIt()
+    {
+        const string Src =
+            "<?xml version=\"1.0\"?>\n" +
+            "<!DOCTYPE library [\n" +
+            "    <!ENTITY company \"TestCorp\">\n" +
+            "]>\n" +
+            "<library/>";
+
+        XmlSourceElement root = XmlSourceParser.Parse(Src);
+
+        root.Name.Should().Be("library");
+        root.Span.Start.Should().Be(Src.IndexOf("<library", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parse_UnknownEntityReference_PreservedAsLiteralText()
+    {
+        const string Src = "<x>Hello &company; World</x>";
+
+        XmlSourceElement el = XmlSourceParser.Parse(Src);
+
+        XmlSourceText text = (XmlSourceText)el.Children[0];
+        text.Value.Should().Be("Hello &company; World");
     }
 
     [Fact]

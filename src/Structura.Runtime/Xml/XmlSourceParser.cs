@@ -63,6 +63,12 @@ public static class XmlSourceParser
             return _source[_pos];
         }
 
+        /// <summary>True if the parser walked past a DOCTYPE block.</summary>
+        public bool SawDtd { get; private set; }
+
+        /// <summary>True if the parser saw an unknown entity reference and preserved it as literal text.</summary>
+        public bool SawUnknownEntity { get; private set; }
+
         public void SkipProlog()
         {
             SkipWhitespace();
@@ -79,6 +85,13 @@ public static class XmlSourceParser
             SkipTrailingWhitespaceAndComments();
         }
 
+        /// <summary>
+        /// Walks past whitespace, comments, and an optional <c>&lt;!DOCTYPE …&gt;</c>
+        /// block. Internal subsets (<c>[ … ]</c>) are matched by scanning to the
+        /// closing <c>]&gt;</c>; subsets without internal markup are matched by
+        /// the next <c>&gt;</c>. Sets <see cref="SawDtd"/> when a DOCTYPE is
+        /// encountered so the source generator can emit STR0006.
+        /// </summary>
         public void SkipTrailingWhitespaceAndComments()
         {
             while (true)
@@ -94,8 +107,71 @@ public static class XmlSourceParser
                     _pos = end + 3;
                     continue;
                 }
+                if (StartsWith("<!DOCTYPE"))
+                {
+                    SawDtd = true;
+                    SkipDoctype();
+                    continue;
+                }
                 return;
             }
+        }
+
+        private void SkipDoctype()
+        {
+            // Pre: positioned at '<' of "<!DOCTYPE…>".
+            // The DOCTYPE may include an internal subset enclosed by [ … ].
+            // Scan forward looking for either ']>' (closes a subset) or '>'
+            // (closes a subset-less DOCTYPE). Track depth in case of nested
+            // angle brackets inside the subset (rare but possible).
+            int depthAngle = 0;
+            int p = _pos + "<!DOCTYPE".Length;
+            bool insideSubset = false;
+            while (p < _source.Length)
+            {
+                char c = _source[p];
+                if (c == '[')
+                {
+                    insideSubset = true;
+                }
+                else if (c == ']' && insideSubset)
+                {
+                    // Look for matching '>' after ']'.
+                    int afterBracket = p + 1;
+                    while (afterBracket < _source.Length
+                           && (_source[afterBracket] == ' '
+                               || _source[afterBracket] == '\t'
+                               || _source[afterBracket] == '\n'
+                               || _source[afterBracket] == '\r'))
+                    {
+                        afterBracket++;
+                    }
+                    if (afterBracket < _source.Length && _source[afterBracket] == '>')
+                    {
+                        _pos = afterBracket + 1;
+                        return;
+                    }
+                }
+                else if (c == '<')
+                {
+                    depthAngle++;
+                }
+                else if (c == '>')
+                {
+                    if (depthAngle > 0)
+                    {
+                        depthAngle--;
+                    }
+                    else if (!insideSubset)
+                    {
+                        _pos = p + 1;
+                        return;
+                    }
+                }
+                p++;
+            }
+
+            throw new XmlParseException("Unterminated <!DOCTYPE …>.");
         }
 
         public XmlSourceElement ParseElement()
@@ -347,8 +423,10 @@ public static class XmlSourceParser
                 return char.ConvertFromUtf32(code);
             }
 
-            throw new XmlParseException(
-                $"Unknown entity reference '&{body};'.");
+            // Unknown entity — tolerate by preserving the literal `&body;`
+            // text in the decoded output. The generator surfaces STR0007.
+            SawUnknownEntity = true;
+            return "&" + body + ";";
         }
 
         private string ReadName()
