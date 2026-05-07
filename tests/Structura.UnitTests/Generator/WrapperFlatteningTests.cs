@@ -55,25 +55,27 @@ public sealed class WrapperFlatteningTests
         const string Src = "<wrapper id=\"1\"><inner><a>1</a></inner></wrapper>";
         string source = GetGeneratedSource("attrs.xml", Src);
 
-        // Literal root carries `id` → no flattening; <wrapper> is the
-        // effective root, so `Id` becomes a property and `<inner>` stays
-        // hidden as a structural child.
+        // Literal root carries `id` → wrapper-flatten does not descend; <wrapper>
+        // is the effective root, so `Id` becomes a scalar property here. Step 8
+        // additionally classifies <inner> as a Pattern A wrapper-style collection,
+        // so the generator emits an Inner property + InnerGroup nested type.
         source.Should().Contain("long Id");
-        source.Should().NotContain(" A\n").And.NotContain(" A\r");
-        source.Should().NotContain("RequireElement(\"inner\")");
+        source.Should().Contain("InnerGroup Inner");
     }
 
     [Fact]
     public void Flatten_StopsAtPureTextChild()
     {
         // Root has a pure-text child <currency> AND a structural child
-        // <customer> — flattening must NOT fire.
+        // <customer> — wrapper-flattening at the literal root does NOT fire,
+        // so <order> stays as the effective root with `Currency` exposed as a
+        // scalar. Step 8 then sees <customer> as a Pattern A wrapper around
+        // <name> and emits a Customer property + CustomerGroup nested type.
         const string Src = "<order><currency>RUB</currency><customer><name>Alice</name></customer></order>";
         string source = GetGeneratedSource("order.xml", Src);
 
         source.Should().Contain("string Currency");
-        source.Should().NotContain("RequireElement(\"customer\")");
-        source.Should().NotContain("RequireElement(\"order\")"); // <-- not a wrapper, not descended
+        source.Should().Contain("CustomerGroup Customer");
     }
 
     [Fact]

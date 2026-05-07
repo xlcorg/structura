@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE library [
+    <!ENTITY company "TestCorp Ltd.">
+    <!ENTITY copyright "© 2026 TestCorp">
+]>
+<!-- Тестовый XML документ для проверки парсера -->
+<library xmlns="http://example.com/library"
+         xmlns:meta="http://example.com/metadata"
+         version="2.1"
+         created="2026-05-07">
+
+    <meta:info>
+        <meta:publisher>&company;</meta:publisher>
+        <meta:notice>&copyright;</meta:notice>
+        <meta:total-items>5</meta:total-items>
+    </meta:info>
+
+    <books>
+        <!-- Обычная книга со всеми полями -->
+        <book id="b001" available="true">
+            <title lang="ru">Война и мир</title>
+            <author>
+                <first-name>Лев</first-name>
+                <last-name>Толстой</last-name>
+            </author>
+            <year>1869</year>
+            <genres>
+                <genre>роман</genre>
+                <genre>историческая проза</genre>
+            </genres>
+            <price currency="RUB">1250.50</price>
+            <description><![CDATA[
+                Эпический роман о русском обществе в эпоху войн против Наполеона.
+                Содержит специальные символы: <, >, &, ", '.
+            ]]></description>
+        </book>
+
+        <!-- Книга с пустыми и самозакрывающимися тегами -->
+        <book id="b002" available="false">
+            <title lang="en">1984</title>
+            <author>
+                <first-name>George</first-name>
+                <last-name>Orwell</last-name>
+            </author>
+            <year>1949</year>
+            <genres>
+                <genre>дистопия</genre>
+                <genre>политическая фантастика</genre>
+            </genres>
+            <price currency="USD">15.99</price>
+            <out-of-stock/>
+            <description>Антиутопия о тоталитарном обществе.</description>
+        </book>
+
+        <!-- Книга с unicode и спецсимволами -->
+        <book id="b003" available="true">
+            <title lang="ja">こころ</title>
+            <author>
+                <first-name>夏目</first-name>
+                <last-name>漱石</last-name>
+            </author>
+            <year>1914</year>
+            <genres>
+                <genre>классика</genre>
+            </genres>
+            <price currency="JPY">980</price>
+            <description>Содержит escape: &amp; &lt; &gt; &quot; &apos;</description>
+        </book>
+
+        <!-- Книга без некоторых необязательных полей -->
+        <book id="b004">
+            <title>Безымянный труд</title>
+            <author>
+                <first-name>Аноним</first-name>
+                <last-name></last-name>
+            </author>
+            <year>2020</year>
+            <price currency="EUR">0.00</price>
+        </book>
+
+        <!-- Книга с глубокой вложенностью -->
+        <book id="b005" available="true">
+            <title lang="en">Compiler Design</title>
+            <author>
+                <first-name>Alfred</first-name>
+                <last-name>Aho</last-name>
+            </author>
+            <year>2006</year>
+            <genres>
+                <genre>учебник</genre>
+                <genre>computer science</genre>
+            </genres>
+            <price currency="USD">89.95</price>
+            <reviews>
+                <review rating="5">
+                    <reviewer>
+                        <name>Иван Петров</name>
+                        <verified>true</verified>
+                    </reviewer>
+                    <text>Отличная книга по теории компиляторов.</text>
+                    <date>2025-11-12</date>
+                </review>
+                <review rating="4">
+                    <reviewer>
+                        <name>Anna Smith</name>
+                        <verified>false</verified>
+                    </reviewer>
+                    <text>Hard but rewarding read.</text>
+                    <date>2026-01-30</date>
+                </review>
+            </reviews>
+        </book>
+    </books>
+
+    <statistics>
+        <total>5</total>
+        <available>3</available>
+        <currencies>RUB,USD,JPY,EUR</currencies>
+    </statistics>
+
+    <!-- Конец документа -->
+</library>

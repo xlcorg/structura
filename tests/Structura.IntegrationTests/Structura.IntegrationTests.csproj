@@ -31,6 +31,9 @@
         <Content Include="..\..\src\Structura\Samples\blrwbl.sample.xml"
                  CopyToOutputDirectory="PreserveNewest"
                  Link="blrwbl.sample.xml" />
+        <Content Include="..\..\src\Structura\Samples\library.sample.xml"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="library.sample.xml" />
     </ItemGroup>
 
 </Project>

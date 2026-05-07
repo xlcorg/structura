@@ -24,22 +24,77 @@ public sealed class StructuraXmlGenerator : IIncrementalGenerator
             .Where(static f => f.Path.EndsWith(".xml",
                 StringComparison.OrdinalIgnoreCase));
 
-        IncrementalValuesProvider<(string className, XmlRootInfo? info)> models = xmlFiles.Select(static (file, ct) =>
-        {
-            string text = file.GetText(ct)?.ToString() ?? string.Empty;
-            string fileName = Path.GetFileName(file.Path);
-            string className = ClassNameDeriver.Derive(fileName);
-            XmlRootInfo? info = GeneratorXmlParser.ParseRootInfo(text);
-            return (className, info);
-        });
+        IncrementalValuesProvider<(string filePath, string className, XmlRootInfo? info)> models =
+            xmlFiles.Select(static (file, ct) =>
+            {
+                string text = file.GetText(ct)?.ToString() ?? string.Empty;
+                string fileName = Path.GetFileName(file.Path);
+                string className = ClassNameDeriver.Derive(fileName);
+                XmlRootInfo? info = GeneratorXmlParser.ParseRootInfo(text);
+                return (file.Path, className, info);
+            });
 
         context.RegisterSourceOutput(models, static (spc, model) =>
         {
+            string fileName = Path.GetFileName(model.filePath);
+            Location fileLocation = Location.Create(
+                model.filePath,
+                Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(0, 0),
+                new Microsoft.CodeAnalysis.Text.LinePositionSpan(
+                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0),
+                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0)));
+
             if (model.info == null)
             {
-                // Unparseable XML — skip emission to avoid breaking the build.
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    StructuraDiagnostics.InvalidXml,
+                    fileLocation,
+                    fileName,
+                    "could not parse root element"));
                 return;
             }
+
+            // Surface observation flags as warnings.
+            XmlGenObservations obs = model.info.Observations;
+            if (obs.SawDtd)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    StructuraDiagnostics.SkippedDtd,
+                    fileLocation,
+                    fileName));
+            }
+            if (obs.SawUnknownEntity)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    StructuraDiagnostics.UnknownEntity,
+                    fileLocation,
+                    fileName,
+                    obs.FirstUnknownEntityName ?? "unknown"));
+            }
+            if (obs.SawNamespaceDecl)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    StructuraDiagnostics.NamespaceDeclaration,
+                    fileLocation,
+                    fileName));
+            }
+
+            // STR0009 once per (parentType, elementName).
+            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            foreach ((string parentType, string elementName) in obs.SkippedStructural)
+            {
+                string key = parentType + "|" + elementName;
+                if (seen.Add(key))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        StructuraDiagnostics.UnsupportedStructuralElement,
+                        fileLocation,
+                        fileName,
+                        elementName,
+                        parentType));
+                }
+            }
+
             string code = XmlModelEmitter.Emit(model.className, model.info);
             spc.AddSource(
                 $"{model.className}.g.cs",

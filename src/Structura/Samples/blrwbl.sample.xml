@@ -87,6 +87,14 @@
                 <LineItemAmountCharges>200.00</LineItemAmountCharges>
                 <LineItemAmount>1200.00</LineItemAmount>
                 <LineItemPrice>10.00</LineItemPrice>
+                <LineItemExtraField>
+                  <FieldName>InventoryId</FieldName>
+                  <FieldValue>123456</FieldValue>
+                </LineItemExtraField>
+                <LineItemExtraField>
+                  <FieldName>ContainerId</FieldName>
+                  <FieldValue>1</FieldValue>
+                </LineItemExtraField>
             </LineItem>
             <LineItem>
                 <LineItemNumber>2</LineItemNumber>
@@ -105,6 +113,14 @@
                 <LineItemAmountCharges>200.00</LineItemAmountCharges>
                 <LineItemAmount>1200.00</LineItemAmount>
                 <LineItemPrice>10.00</LineItemPrice>
+                <LineItemExtraField>
+                  <FieldName>InventoryId</FieldName>
+                  <FieldValue>123455</FieldValue>
+                </LineItemExtraField>
+                <LineItemExtraField>
+                  <FieldName>ContainerId</FieldName>
+                  <FieldValue>2</FieldValue>
+                </LineItemExtraField>
             </LineItem>
         </DespatchAdviceLogisticUnitLineItem>
         <Total>

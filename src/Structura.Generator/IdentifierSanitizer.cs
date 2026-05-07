@@ -51,7 +51,7 @@ internal static class IdentifierSanitizer
 
         foreach (char c in jsonKey)
         {
-            if (c == '-' || c == '_' || c == ' ' || c == '\t' || c == '.')
+            if (c == '-' || c == '_' || c == ' ' || c == '\t' || c == '.' || c == ':')
             {
                 newToken = true;
                 continue;

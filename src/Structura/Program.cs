@@ -42,6 +42,16 @@ var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 waybill.Currency = "USD";
 waybill.SealID = 99999;
 
+foreach (var lineItem in waybill.DespatchAdviceLogisticUnitLineItem.LineItems)
+{
+    if (lineItem.LineItemNumber == 2)
+    {
+        lineItem.LineItemNumber = 42;
+    }
+
+    Console.WriteLine($"{lineItem.LineItemNumber}. {lineItem.LineItemName}");
+}
+
 string modifiedBlrwbl = waybill.ToXml();
 
 Console.WriteLine("=== Modified BLRWBL XML ===");
