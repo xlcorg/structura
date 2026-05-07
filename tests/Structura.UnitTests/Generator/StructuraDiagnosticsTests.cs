@@ -1,0 +1,177 @@
+using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
+
+using FluentAssertions;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
+
+using Structura.Generator;
+
+using Xunit;
+
+namespace Structura.UnitTests.Generator;
+
+/// <summary>
+/// Verifies that <see cref="StructuraDiagnostics"/> descriptors STR0001–STR0009
+/// are emitted by the generators under the expected conditions.
+/// </summary>
+public sealed class StructuraDiagnosticsTests
+{
+    // ── Error diagnostics ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void Generator_InvalidXml_EmitsSTR0002()
+    {
+        // Unclosed root tag — parser cannot recover.
+        GeneratorDriverRunResult result = RunXmlGenerator("broken.xml", "<root>");
+
+        result.GeneratedTrees.Should().BeEmpty();
+        result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0002")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Generator_InvalidJson_EmitsSTR0001()
+    {
+        // Non-JSON input to the JSON generator.
+        GeneratorDriverRunResult result = RunJsonGenerator("broken.json", "not json");
+
+        result.GeneratedTrees.Should().BeEmpty();
+        result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0001")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Error);
+    }
+
+    // ── Warning diagnostics ───────────────────────────────────────────────────
+
+    [Fact]
+    public void Generator_DtdPresent_EmitsSTR0006Warning()
+    {
+        const string Src = "<!DOCTYPE root [<!ENTITY foo \"bar\">]><root><a>1</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("dtd.xml", Src);
+
+        result.Diagnostics.Should().Contain(d => d.Id == "STR0006")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Generator_UnknownEntity_EmitsSTR0007Warning()
+    {
+        const string Src = "<root><a>&unknown;</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("entity.xml", Src);
+
+        result.Diagnostics.Should().Contain(d => d.Id == "STR0007")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Generator_XmlnsDeclaration_EmitsSTR0008Warning()
+    {
+        const string Src = "<root xmlns=\"http://example.com\"><a>1</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("ns.xml", Src);
+
+        result.Diagnostics.Should().Contain(d => d.Id == "STR0008")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Generator_NestedStructural_EmitsSTR0009Warning()
+    {
+        // <nested> has two children with different names → cannot be a collection
+        // wrapper → STR0009 is reported.
+        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
+
+        result.Diagnostics.Should().Contain(d => d.Id == "STR0009")
+            .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
+    }
+
+    [Fact]
+    public void Generator_NestedStructural_DeduplicatesPerParentType()
+    {
+        // Two <item> elements both have a <meta> child with heterogeneous
+        // sub-elements → only one STR0009 for the ("Item", "meta") pair.
+        const string Src =
+            "<root><items>" +
+            "<item><id>1</id><meta><x>1</x><y>2</y></meta></item>" +
+            "<item><id>2</id><meta><a>1</a><b>2</b></meta></item>" +
+            "</items></root>";
+
+        GeneratorDriverRunResult result = RunXmlGenerator("dedup.xml", Src);
+
+        result.Diagnostics.Count(d => d.Id == "STR0009").Should().Be(1);
+    }
+
+    [Fact]
+    public void Diagnostic_Location_PointsAtFile()
+    {
+        GeneratorDriverRunResult result = RunXmlGenerator("myfile.xml", "<root>");
+
+        Diagnostic diag = result.Diagnostics.Should()
+            .ContainSingle(d => d.Id == "STR0002").Subject;
+
+        diag.Location.GetMappedLineSpan().Path.Should().Be("myfile.xml");
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static GeneratorDriverRunResult RunXmlGenerator(string fileName, string content)
+    {
+        var compilation = CSharpCompilation.Create(
+            "TestAssembly",
+            references: new[]
+            {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            });
+
+        var generator = new StructuraXmlGenerator();
+        var additionalText = new InMemoryAdditionalText(fileName, content);
+
+        var driver = CSharpGeneratorDriver.Create(
+                generators: new[] { generator.AsSourceGenerator() },
+                additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
+            .RunGenerators(compilation);
+
+        return driver.GetRunResult();
+    }
+
+    private static GeneratorDriverRunResult RunJsonGenerator(string fileName, string content)
+    {
+        var compilation = CSharpCompilation.Create(
+            "TestAssembly",
+            references: new[]
+            {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            });
+
+        var generator = new StructuraJsonGenerator();
+        var additionalText = new InMemoryAdditionalText(fileName, content);
+
+        var driver = CSharpGeneratorDriver.Create(
+                generators: new[] { generator.AsSourceGenerator() },
+                additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
+            .RunGenerators(compilation);
+
+        return driver.GetRunResult();
+    }
+
+    private sealed class InMemoryAdditionalText : AdditionalText
+    {
+        private readonly SourceText _text;
+
+        public InMemoryAdditionalText(string path, string content)
+        {
+            Path = path;
+            _text = SourceText.From(content, System.Text.Encoding.UTF8);
+        }
+
+        public override string Path { get; }
+
+        public override SourceText? GetText(CancellationToken cancellationToken = default)
+        {
+            return _text;
+        }
+    }
+}

@@ -164,4 +164,37 @@ public sealed class BlrwblSampleParseTests
         modified.Should().Contain("<SealID>99999</SealID>");
         modified.Should().Contain("<Currency>USD</Currency>");
     }
+
+    [Fact]
+    public void BlrwblFullDemo_OnlyMutatedRegionsDiffer()
+    {
+        string source = LoadSample();
+        var doc = source.ParseXml<BlrwblSampleXml>();
+
+        doc.SealID = 99999;
+        doc.Currency = "USD";
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = 42;
+
+        string modified = doc.ToXml();
+
+        IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)doc).Changes;
+        changes.Should().HaveCount(3);
+        // Changes are sorted by Span.Start: SealID < Currency < LineItems[1].LineItemNumber.
+        changes[0].Path.Should().Be("/SealID");
+        changes[1].Path.Should().Be("/Currency");
+        changes[2].Path.Should().Be("/DespatchAdviceLogisticUnitLineItem/LineItems/1/LineItemNumber");
+
+        // Walk through the changes and verify that the bytes between them
+        // (and before the first / after the last) are byte-identical to the original.
+        int sourcePos = 0;
+        int modPos = 0;
+        foreach (DocumentChange ch in changes)
+        {
+            int beforeLen = ch.Span.Start - sourcePos;
+            modified.Substring(modPos, beforeLen).Should().Be(source.Substring(sourcePos, beforeLen));
+            modPos += beforeLen + ch.NewText.Length;
+            sourcePos = ch.Span.End;
+        }
+        modified[modPos..].Should().Be(source[sourcePos..]);
+    }
 }

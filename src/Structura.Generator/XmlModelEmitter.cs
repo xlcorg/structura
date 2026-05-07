@@ -305,7 +305,8 @@ internal static class XmlModelEmitter
                 sourceElementVar: "element",
                 parentPathPrefixExpr: "_pathPrefix",
                 contextExpr: "_ctx",
-                indent: "            ");
+                indent: "            ",
+                optional: true);
         }
         sb.AppendLine("        }");
 
@@ -362,7 +363,8 @@ internal static class XmlModelEmitter
         string sourceElementVar,
         string parentPathPrefixExpr,
         string contextExpr,
-        string indent)
+        string indent,
+        bool optional = false)
     {
         if (coll.Style == XmlGenCollectionStyle.Wrapper)
         {
@@ -382,22 +384,34 @@ internal static class XmlModelEmitter
         }
         else if (coll.Style == XmlGenCollectionStyle.Flat)
         {
-            // Flat: literal root has the wrapper element, but path-wise the
-            // wrapper segment is collapsed. RequireElement on the wrapper, then
-            // iterate its children matching ItemElementName.
+            // Flat: the wrapper element is collapsed from the path perspective.
+            // For optional collections (item-level), the wrapper may be absent
+            // in some items — use FindElement + null guard instead of RequireElement.
             sb.AppendLine();
-            sb.Append(indent).Append("var ").Append(ToCamel(csharpPropertyName))
-              .Append("WrapperEl = ").Append(sourceElementVar)
-              .Append(".RequireElement(\"").Append(EscapeForCsString(coll.WrapperElementName!))
-              .AppendLine("\");");
+            string wrapperVarName = ToCamel(csharpPropertyName) + "WrapperEl";
+            if (optional)
+            {
+                sb.Append(indent).Append("XmlSourceElement? ").Append(wrapperVarName)
+                  .Append(" = ").Append(sourceElementVar)
+                  .Append(".FindElement(\"").Append(EscapeForCsString(coll.WrapperElementName!))
+                  .AppendLine("\");");
+            }
+            else
+            {
+                sb.Append(indent).Append("var ").Append(wrapperVarName)
+                  .Append(" = ").Append(sourceElementVar)
+                  .Append(".RequireElement(\"").Append(EscapeForCsString(coll.WrapperElementName!))
+                  .AppendLine("\");");
+            }
             EmitCollectionItemsInitFromWrapper(
                 sb,
                 coll: coll,
                 csharpPropertyName: csharpPropertyName,
-                wrapperVarName: ToCamel(csharpPropertyName) + "WrapperEl",
+                wrapperVarName: wrapperVarName,
                 parentPathPrefixExpr: parentPathPrefixExpr,
                 contextExpr: contextExpr,
-                indent: indent);
+                indent: indent,
+                optional: optional);
         }
         else
         {
@@ -447,31 +461,45 @@ internal static class XmlModelEmitter
         string wrapperVarName,
         string parentPathPrefixExpr,
         string contextExpr,
-        string indent)
+        string indent,
+        bool optional = false)
     {
         string listVar = "list_" + ToCamel(csharpPropertyName);
         string indexVar = "idx_" + ToCamel(csharpPropertyName);
         string elVar = "el_" + ToCamel(csharpPropertyName);
 
+        // For optional wrappers (present in some items but not all), the loop
+        // is guarded by a null check so absent items get an empty collection.
+        string loopIndent = optional ? indent + "    " : indent;
+
         if (coll.ItemIsPureTextLeaf)
         {
             sb.Append(indent).Append("var ").Append(listVar)
               .AppendLine(" = new System.Collections.Generic.List<string>();");
-            sb.Append(indent).Append("foreach (XmlSourceNode node in ")
+            if (optional)
+            {
+                sb.Append(indent).Append("if (").Append(wrapperVarName).AppendLine(" != null)");
+                sb.Append(indent).AppendLine("{");
+            }
+            sb.Append(loopIndent).Append("foreach (XmlSourceNode node in ")
               .Append(wrapperVarName).AppendLine(".Children)");
-            sb.Append(indent).AppendLine("{");
-            sb.Append(indent).Append("    if (node is XmlSourceElement ").Append(elVar)
+            sb.Append(loopIndent).AppendLine("{");
+            sb.Append(loopIndent).Append("    if (node is XmlSourceElement ").Append(elVar)
               .Append(" && string.Equals(").Append(elVar)
               .Append(".Name, \"").Append(EscapeForCsString(coll.ItemElementName))
               .AppendLine("\", System.StringComparison.Ordinal))");
-            sb.Append(indent).AppendLine("    {");
-            sb.Append(indent).Append("        ").Append(listVar)
+            sb.Append(loopIndent).AppendLine("    {");
+            sb.Append(loopIndent).Append("        ").Append(listVar)
               .Append(".Add(").Append(elVar).Append(".Children.Count > 0 && ")
               .Append(elVar).Append(".Children[0] is XmlSourceText t_").Append(ToCamel(csharpPropertyName))
               .Append(" ? t_").Append(ToCamel(csharpPropertyName))
               .AppendLine(".Value : string.Empty);");
-            sb.Append(indent).AppendLine("    }");
-            sb.Append(indent).AppendLine("}");
+            sb.Append(loopIndent).AppendLine("    }");
+            sb.Append(loopIndent).AppendLine("}");
+            if (optional)
+            {
+                sb.Append(indent).AppendLine("}");
+            }
             sb.Append(indent).Append("_").Append(ToCamel(csharpPropertyName))
               .Append(" = ").Append(listVar).AppendLine(";");
         }
@@ -481,23 +509,32 @@ internal static class XmlModelEmitter
               .Append(" = new System.Collections.Generic.List<")
               .Append(coll.ItemTypeName).AppendLine(">();");
             sb.Append(indent).Append("int ").Append(indexVar).AppendLine(" = 0;");
-            sb.Append(indent).Append("foreach (XmlSourceNode node in ")
+            if (optional)
+            {
+                sb.Append(indent).Append("if (").Append(wrapperVarName).AppendLine(" != null)");
+                sb.Append(indent).AppendLine("{");
+            }
+            sb.Append(loopIndent).Append("foreach (XmlSourceNode node in ")
               .Append(wrapperVarName).AppendLine(".Children)");
-            sb.Append(indent).AppendLine("{");
-            sb.Append(indent).Append("    if (node is XmlSourceElement ").Append(elVar)
+            sb.Append(loopIndent).AppendLine("{");
+            sb.Append(loopIndent).Append("    if (node is XmlSourceElement ").Append(elVar)
               .Append(" && string.Equals(").Append(elVar)
               .Append(".Name, \"").Append(EscapeForCsString(coll.ItemElementName))
               .AppendLine("\", System.StringComparison.Ordinal))");
-            sb.Append(indent).AppendLine("    {");
-            sb.Append(indent).Append("        ").Append(listVar)
+            sb.Append(loopIndent).AppendLine("    {");
+            sb.Append(loopIndent).Append("        ").Append(listVar)
               .Append(".Add(new ").Append(coll.ItemTypeName).Append("(")
               .Append(contextExpr).Append(", ")
               .Append(parentPathPrefixExpr).Append(" + \"/").Append(csharpPropertyName)
               .Append("/\" + ").Append(indexVar).Append(", ")
               .Append(elVar).AppendLine("));");
-            sb.Append(indent).Append("        ").Append(indexVar).AppendLine("++;");
-            sb.Append(indent).AppendLine("    }");
-            sb.Append(indent).AppendLine("}");
+            sb.Append(loopIndent).Append("        ").Append(indexVar).AppendLine("++;");
+            sb.Append(loopIndent).AppendLine("    }");
+            sb.Append(loopIndent).AppendLine("}");
+            if (optional)
+            {
+                sb.Append(indent).AppendLine("}");
+            }
             sb.Append(indent).Append("_").Append(ToCamel(csharpPropertyName))
               .Append(" = ").Append(listVar).AppendLine(";");
         }
