@@ -42,7 +42,7 @@ var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 waybill.Currency = "USD";
 waybill.SealID = 99999;
 
-foreach (var lineItem in waybill.DespatchAdviceLogisticUnitLineItem.LineItems)
+foreach (BlrwblSampleXml.LineItem lineItem in waybill.DespatchAdviceLogisticUnitLineItem.LineItems)
 {
     if (lineItem.LineItemNumber == 2)
     {
@@ -64,3 +64,27 @@ Console.WriteLine();
 
 Console.WriteLine("=== BLRWBL Diff (ConsoleDiffReporter) ===");
 ConsoleDiffReporter.Print(waybill);
+Console.WriteLine();
+
+// ── Library pipeline (heterogeneous-item torture sample) ─────────────────────
+
+string libraryPath = Path.Combine(AppContext.BaseDirectory, "Samples", "library.sample.xml");
+string libraryXml = libraryPath.ReadAllText();
+
+var library = libraryXml.ParseXml<LibrarySampleXml>();
+
+library.Created = "2026-05-08";
+library.Books[0].Title = "Мир и война";
+
+string modifiedLibrary = library.ToXml();
+
+Console.WriteLine("=== Modified Library XML ===");
+Console.WriteLine(modifiedLibrary);
+Console.WriteLine();
+
+Console.WriteLine("=== Library Changes (SimpleReporter) ===");
+SimpleReporter.Print(library);
+Console.WriteLine();
+
+Console.WriteLine("=== Library Diff (ConsoleDiffReporter) ===");
+ConsoleDiffReporter.Print(library);
