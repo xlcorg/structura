@@ -18,6 +18,12 @@ order.Currency = "USD";
 order.Version = 42;
 order.IsPriority = false;
 
+order.Customer.FirstName = "Ivan";
+order.Customer.Preferences.MarketingConsent = false;
+order.BillingAddress.City = "Rotterdam";
+order.Items[0].Quantity = 2;
+order.Items[1].Manufacturer.CountryCode = "DE";
+
 string modifiedJson = order.ToJson();
 
 Console.WriteLine("=== Modified JSON ===");
@@ -88,3 +94,44 @@ Console.WriteLine();
 
 Console.WriteLine("=== Library Diff (ConsoleDiffReporter) ===");
 ConsoleDiffReporter.Print(library);
+Console.WriteLine();
+
+// ── Library JSON pipeline (heterogeneous-item torture sample, JSON side) ─────
+
+string libraryJsonPath = Path.Combine(AppContext.BaseDirectory, "Samples", "library.sample.json");
+string libraryJson = libraryJsonPath.ReadAllText();
+
+var libraryDoc = libraryJson.ParseJson<LibrarySampleJson>();
+
+libraryDoc.Name = "City Library";
+libraryDoc.Books[1].Publisher.Address.City = "Saint Petersburg";
+libraryDoc.Books[2].Publisher.Address.City = "Lyon";
+
+Console.WriteLine("=== Library JSON tags / years ===");
+Console.WriteLine($"tags:  {string.Join(", ", libraryDoc.Tags)}");
+Console.WriteLine($"years: {string.Join(", ", libraryDoc.Years)}");
+Console.WriteLine();
+
+try
+{
+    libraryDoc.Books[1].Subtitle = "anything";
+}
+catch (StructuraMutationException ex)
+{
+    Console.WriteLine($"=== Throwing setter (expected) ===");
+    Console.WriteLine(ex.Message);
+    Console.WriteLine();
+}
+
+string modifiedLibraryJson = libraryDoc.ToJson();
+
+Console.WriteLine("=== Modified Library JSON ===");
+Console.WriteLine(modifiedLibraryJson);
+Console.WriteLine();
+
+Console.WriteLine("=== Library JSON Changes (SimpleReporter) ===");
+SimpleReporter.Print(libraryDoc);
+Console.WriteLine();
+
+Console.WriteLine("=== Library JSON Diff (ConsoleDiffReporter) ===");
+ConsoleDiffReporter.Print(libraryDoc);
