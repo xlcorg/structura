@@ -23,14 +23,14 @@ public sealed class RepeatedElementsTests
     [Fact]
     public void Shape1_WrapperBecomesNestedType_AndCollectionLivesInside()
     {
-        const string Src =
+        const string src =
             "<root><currency>BYN</currency>" +
             "<DespatchAdviceLogisticUnitLineItem>" +
             "<LineItem><n>1</n></LineItem>" +
             "<LineItem><n>2</n></LineItem>" +
             "</DespatchAdviceLogisticUnitLineItem></root>";
 
-        string source = GetGeneratedSource("waybill.xml", Src);
+        string source = GetGeneratedSource("waybill.xml", src);
 
         source.Should().Contain("class DespatchAdviceLogisticUnitLineItemGroup");
         source.Should().Contain("IReadOnlyList<LineItem> LineItems");
@@ -40,14 +40,14 @@ public sealed class RepeatedElementsTests
     [Fact]
     public void Shape1_NestedAccess_HasWrapperLayerInPath()
     {
-        const string Src =
+        const string src =
             "<root><currency>BYN</currency>" +
             "<DespatchAdviceLogisticUnitLineItem>" +
             "<LineItem><n>1</n></LineItem>" +
             "<LineItem><n>2</n></LineItem>" +
             "</DespatchAdviceLogisticUnitLineItem></root>";
 
-        string source = GetGeneratedSource("waybill.xml", Src);
+        string source = GetGeneratedSource("waybill.xml", src);
 
         // Wrapper ctor passes path prefix "…/DespatchAdviceLogisticUnitLineItem"
         // and the inner list uses "…/LineItems/" + index.
@@ -59,12 +59,12 @@ public sealed class RepeatedElementsTests
     public void Shape2_PluralWrapper_FlattensAway()
     {
         // "books" == "book" + "s" → flat style: no BooksGroup, just Books property.
-        const string Src =
+        const string src =
             "<root><version>1</version>" +
             "<books><book><title>T1</title></book><book><title>T2</title></book></books>" +
             "</root>";
 
-        string source = GetGeneratedSource("library.xml", Src);
+        string source = GetGeneratedSource("library.xml", src);
 
         source.Should().Contain("IReadOnlyList<Book> Books");
         source.Should().NotContain("BooksGroup");
@@ -74,13 +74,13 @@ public sealed class RepeatedElementsTests
     public void Shape3_SiblingGroup_AlongsideScalars_ExposesAsCollection()
     {
         // Two <line> elements appear as direct siblings — no wrapper.
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<line><qty>5</qty></line>" +
             "<line><qty>3</qty></line>" +
             "</order>";
 
-        string source = GetGeneratedSource("order.xml", Src);
+        string source = GetGeneratedSource("order.xml", src);
 
         source.Should().Contain("string Currency");
         source.Should().Contain("IReadOnlyList<Line> Lines");
@@ -93,12 +93,12 @@ public sealed class RepeatedElementsTests
         // A single structural element with heterogeneous children is a
         // nested object (Step 10), not a collection. The generator should
         // emit a typed property and class, but no IReadOnlyList<Meta>.
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<meta><key>a</key><val>b</val></meta>" +
             "</order>";
 
-        string source = GetGeneratedSource("order.xml", Src);
+        string source = GetGeneratedSource("order.xml", src);
 
         source.Should().Contain("string Currency");
         source.Should().Contain("MetaType Meta");
@@ -110,12 +110,12 @@ public sealed class RepeatedElementsTests
     public void Shape4_PureTextLeafItems_EmitListOfString()
     {
         // <genres> wrapper containing pure-text <genre> children → IReadOnlyList<string>.
-        const string Src =
+        const string src =
             "<root><version>1</version>" +
             "<genres><genre>fiction</genre><genre>scifi</genre></genres>" +
             "</root>";
 
-        string source = GetGeneratedSource("catalog.xml", Src);
+        string source = GetGeneratedSource("catalog.xml", src);
 
         source.Should().Contain("IReadOnlyList<string> Genres");
         source.Should().Contain("long Version");
@@ -127,13 +127,13 @@ public sealed class RepeatedElementsTests
     public void Recursive_ItemHasItsOwnCollection()
     {
         // <order> items each contain a <lines> collection of <line> items.
-        const string Src =
+        const string src =
             "<root><orders>" +
             "<order><id>1</id><lines><line><qty>5</qty></line><line><qty>3</qty></line></lines></order>" +
             "<order><id>2</id><lines><line><qty>1</qty></line></lines></order>" +
             "</orders></root>";
 
-        string source = GetGeneratedSource("store.xml", Src);
+        string source = GetGeneratedSource("store.xml", src);
 
         source.Should().Contain("class Order");
         source.Should().Contain("class Line");
@@ -145,13 +145,13 @@ public sealed class RepeatedElementsTests
     [Fact]
     public void Path_NestedCollection_HasComposedIndices()
     {
-        const string Src =
+        const string src =
             "<root><orders>" +
             "<order><id>1</id><lines><line><qty>5</qty></line></lines></order>" +
             "<order><id>2</id><lines><line><qty>1</qty></line></lines></order>" +
             "</orders></root>";
 
-        string source = GetGeneratedSource("store.xml", Src);
+        string source = GetGeneratedSource("store.xml", src);
 
         // The Line setter records _pathPrefix + "/Qty" where _pathPrefix
         // was built from the parent + "/Lines/" + index.
@@ -163,17 +163,17 @@ public sealed class RepeatedElementsTests
     public void Pluralization_AppendsSExceptWhenAlreadyEndsInS()
     {
         // "book" → "Books" (adds 's').
-        const string BookSrc =
+        const string bookSrc =
             "<root><version>1</version>" +
             "<books><book><id>1</id></book></books></root>";
-        string source = GetGeneratedSource("p.xml", BookSrc);
+        string source = GetGeneratedSource("p.xml", bookSrc);
         source.Should().Contain("IReadOnlyList<Book> Books");
 
         // "Class" ends in 's' → Pluralize keeps it without adding another 's'.
-        const string ClassSrc =
+        const string classSrc =
             "<root><version>1</version>" +
             "<classes><class><id>1</id></class></classes></root>";
-        string source2 = GetGeneratedSource("p2.xml", ClassSrc);
+        string source2 = GetGeneratedSource("p2.xml", classSrc);
         source2.Should().NotContain("Classs");
         source2.Should().Contain("IReadOnlyList<Class>");
     }
@@ -182,8 +182,8 @@ public sealed class RepeatedElementsTests
     public void EmptyContainer_NotACollection()
     {
         // <empty></empty> has zero children → TryClassifyAsWrapper returns null.
-        const string Src = "<root><version>1</version><empty></empty></root>";
-        string source = GetGeneratedSource("e.xml", Src);
+        const string src = "<root><version>1</version><empty></empty></root>";
+        string source = GetGeneratedSource("e.xml", src);
 
         source.Should().Contain("long Version");
         source.Should().NotContain("class Empty");
@@ -196,13 +196,13 @@ public sealed class RepeatedElementsTests
     {
         // item1 has <extra>, item2 does not → Extra is in the union type
         // with an _extraIsPresent guard; the setter throws StructuraMutationException.
-        const string Src =
+        const string src =
             "<root><items>" +
             "<item><id>1</id><extra>x</extra></item>" +
             "<item><id>2</id></item>" +
             "</items></root>";
 
-        string source = GetGeneratedSource("h.xml", Src);
+        string source = GetGeneratedSource("h.xml", src);
 
         source.Should().Contain("class Item");
         source.Should().Contain("long Id");
@@ -232,7 +232,7 @@ public sealed class RepeatedElementsTests
         var generator = new StructuraXmlGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, xmlContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

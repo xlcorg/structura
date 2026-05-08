@@ -20,9 +20,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void RootScalars_AreClassifiedByKind()
     {
-        const string Src = "{\"name\":\"Alice\",\"age\":30,\"price\":9.99,\"active\":true,\"notes\":null}";
+        const string src = "{\"name\":\"Alice\",\"age\":30,\"price\":9.99,\"active\":true,\"notes\":null}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info.Should().NotBeNull();
         info!.Root.Scalars.Should().HaveCount(5);
@@ -37,9 +37,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void NestedObject_BecomesChildJsonGenObject()
     {
-        const string Src = "{\"name\":\"Lib\",\"address\":{\"city\":\"AMS\",\"zip\":\"1011AB\"}}";
+        const string src = "{\"name\":\"Lib\",\"address\":{\"city\":\"AMS\",\"zip\":\"1011AB\"}}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info.Should().NotBeNull();
         info!.Root.NestedObjects.Should().HaveCount(1);
@@ -54,9 +54,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void ArrayOfStrings_BecomesPrimitiveCollection()
     {
-        const string Src = "{\"tags\":[\"fiction\",\"classic\"]}";
+        const string src = "{\"tags\":[\"fiction\",\"classic\"]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info.Should().NotBeNull();
         info!.Root.Collections.Should().HaveCount(1);
@@ -70,9 +70,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void ArrayOfLongs_BecomesPrimitiveCollection()
     {
-        const string Src = "{\"years\":[1865,1872]}";
+        const string src = "{\"years\":[1865,1872]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info!.Root.Collections.Single().PrimitiveItemKind.Should().Be(JsonGenScalarKind.Long);
     }
@@ -80,9 +80,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void EmptyArray_BecomesEmptyCollection()
     {
-        const string Src = "{\"archive\":[]}";
+        const string src = "{\"archive\":[]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         JsonGenCollection coll = info!.Root.Collections.Single();
         coll.ItemKind.Should().Be(JsonGenItemKind.Empty);
@@ -97,13 +97,13 @@ public sealed class JsonParseRootInfoTests
         //   - {id: 1, sku: "A"}            → both id and sku present
         //   - {id: 2, sku: "B", note: "x"} → note present only in second
         // Union: id (long, required), sku (string, required), note (string, optional).
-        const string Src =
+        const string src =
             "{\"items\":[" +
             "{\"id\":1,\"sku\":\"A\"}," +
             "{\"id\":2,\"sku\":\"B\",\"note\":\"x\"}" +
             "]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         JsonGenCollection coll = info!.Root.Collections.Single();
         coll.ItemKind.Should().Be(JsonGenItemKind.Object);
@@ -121,13 +121,13 @@ public sealed class JsonParseRootInfoTests
     public void ArrayOfObjects_NullablePromotion_ForNullObservation()
     {
         // city: "AMS" in first item, null in second → string? in the union.
-        const string Src =
+        const string src =
             "{\"books\":[" +
             "{\"city\":\"AMS\"}," +
             "{\"city\":null}" +
             "]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         JsonGenObject? itemShape = info!.Root.Collections.Single().ObjectItem;
         itemShape!.Scalars.Single(s => s.Name == "city").Kind.Should().Be(JsonGenScalarKind.NullableString);
@@ -136,9 +136,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void HeterogeneousPrimitiveArray_BecomesHeterogeneousCollection()
     {
-        const string Src = "{\"mixed\":[1,\"two\"]}";
+        const string src = "{\"mixed\":[1,\"two\"]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info!.Root.Collections.Single().ItemKind.Should().Be(JsonGenItemKind.Heterogeneous);
     }
@@ -146,9 +146,9 @@ public sealed class JsonParseRootInfoTests
     [Fact]
     public void MixedObjectAndPrimitiveArray_BecomesHeterogeneousCollection()
     {
-        const string Src = "{\"mixed\":[{\"a\":1},\"two\"]}";
+        const string src = "{\"mixed\":[{\"a\":1},\"two\"]}";
 
-        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(Src);
+        JsonRootInfo? info = GeneratorJsonParser.ParseRootInfo(src);
 
         info!.Root.Collections.Single().ItemKind.Should().Be(JsonGenItemKind.Heterogeneous);
     }

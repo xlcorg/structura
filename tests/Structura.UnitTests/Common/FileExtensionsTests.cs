@@ -14,10 +14,10 @@ public sealed class FileExtensionsTests
         string path = Path.GetTempFileName();
         try
         {
-            const string Payload = "hello\nстрока\nмир\n";
-            File.WriteAllText(path, Payload);
+            const string payload = "hello\nстрока\nмир\n";
+            File.WriteAllText(path, payload);
 
-            path.ReadAllText().Should().Be(Payload);
+            path.ReadAllText().Should().Be(payload);
         }
         finally
         {
@@ -31,11 +31,11 @@ public sealed class FileExtensionsTests
         string path = Path.GetTempFileName();
         try
         {
-            const string Payload = "{\"x\":1}";
-            string returned = path.WriteAllText(Payload);
+            const string payload = "{\"x\":1}";
+            string returned = path.WriteAllText(payload);
 
             returned.Should().Be(path);
-            File.ReadAllText(path).Should().Be(Payload);
+            File.ReadAllText(path).Should().Be(payload);
         }
         finally
         {

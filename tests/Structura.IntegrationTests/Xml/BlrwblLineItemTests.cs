@@ -32,7 +32,7 @@ public sealed class BlrwblLineItemTests
     public void LineItem_HasExpectedScalarTypes()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        var item = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0];
+        BlrwblSampleXml.LineItem item = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0];
 
         // Compile-time type assertions via local variables.
         long number = item.LineItemNumber;
@@ -56,7 +56,7 @@ public sealed class BlrwblLineItemTests
     public void LineItemExtraField_FieldName_IsString_FieldValue_IsLong()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        var field = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0].LineItemExtraFields[0];
+        BlrwblSampleXml.LineItemExtraField field = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0].LineItemExtraFields[0];
 
         // Compile-time type assertions.
         string fieldName = field.FieldName;

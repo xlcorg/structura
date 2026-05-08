@@ -49,8 +49,8 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_DtdPresent_EmitsSTR0006Warning()
     {
-        const string Src = "<!DOCTYPE root [<!ENTITY foo \"bar\">]><root><a>1</a></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("dtd.xml", Src);
+        const string src = "<!DOCTYPE root [<!ENTITY foo \"bar\">]><root><a>1</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("dtd.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0006")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -59,8 +59,8 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_UnknownEntity_EmitsSTR0007Warning()
     {
-        const string Src = "<root><a>&unknown;</a></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("entity.xml", Src);
+        const string src = "<root><a>&unknown;</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("entity.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0007")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -69,8 +69,8 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_XmlnsDeclaration_EmitsSTR0008Warning()
     {
-        const string Src = "<root xmlns=\"http://example.com\"><a>1</a></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("ns.xml", Src);
+        const string src = "<root xmlns=\"http://example.com\"><a>1</a></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("ns.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0008")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -84,8 +84,8 @@ public sealed class StructuraDiagnosticsTests
         // so the element is skipped with STR0009. A pure-structural element
         // like <nested><x>1</x><y>2</y></nested> would now be a nested object
         // and produce no warning.
-        const string Src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
+        const string src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0009")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -97,13 +97,13 @@ public sealed class StructuraDiagnosticsTests
         // Two <item> elements both have a <meta lang="...">text</meta> child
         // (text+attribute residual) → only one STR0009 for the
         // ("Item", "meta") pair.
-        const string Src =
+        const string src =
             "<root><items>" +
             "<item><id>1</id><meta lang=\"a\">x</meta></item>" +
             "<item><id>2</id><meta lang=\"b\">y</meta></item>" +
             "</items></root>";
 
-        GeneratorDriverRunResult result = RunXmlGenerator("dedup.xml", Src);
+        GeneratorDriverRunResult result = RunXmlGenerator("dedup.xml", src);
 
         result.Diagnostics.Count(d => d.Id == "STR0009").Should().Be(1);
     }
@@ -113,8 +113,8 @@ public sealed class StructuraDiagnosticsTests
     {
         // After Step 10, a single-occurrence structural element with no
         // attributes is a nested object — no STR0009 should fire.
-        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("nested.xml", Src);
+        const string src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("nested.xml", src);
 
         result.Diagnostics.Should().NotContain(d => d.Id == "STR0009");
     }
@@ -124,8 +124,8 @@ public sealed class StructuraDiagnosticsTests
     {
         // Mixed-shape array — primitive and object items are incompatible
         // for V1, so the property must be skipped with STR0010.
-        const string Src = "{\"v\":1,\"mixed\":[{\"a\":1},2]}";
-        GeneratorDriverRunResult result = RunJsonGenerator("hetero.json", Src);
+        const string src = "{\"v\":1,\"mixed\":[{\"a\":1},2]}";
+        GeneratorDriverRunResult result = RunJsonGenerator("hetero.json", src);
 
         Diagnostic diag = result.Diagnostics
             .Should().ContainSingle(d => d.Id == "STR0010").Subject;
@@ -136,8 +136,8 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_EmptyJsonArray_EmitsSTR0011Warning()
     {
-        const string Src = "{\"v\":1,\"archive\":[]}";
-        GeneratorDriverRunResult result = RunJsonGenerator("empty.json", Src);
+        const string src = "{\"v\":1,\"archive\":[]}";
+        GeneratorDriverRunResult result = RunJsonGenerator("empty.json", src);
 
         Diagnostic diag = result.Diagnostics
             .Should().ContainSingle(d => d.Id == "STR0011").Subject;
@@ -152,8 +152,8 @@ public sealed class StructuraDiagnosticsTests
         // decoration around element names, no V1 phrase. The XML generator
         // still emits it for residual text+attribute / mixed-content cases,
         // but the wording is format-neutral.
-        const string Src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
-        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
+        const string src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", src);
 
         Diagnostic diag = result.Diagnostics.Should()
             .ContainSingle(d => d.Id == "STR0009").Subject;
@@ -189,7 +189,7 @@ public sealed class StructuraDiagnosticsTests
         var generator = new StructuraXmlGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, content);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);
@@ -209,7 +209,7 @@ public sealed class StructuraDiagnosticsTests
         var generator = new StructuraJsonGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, content);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

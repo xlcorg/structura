@@ -24,8 +24,8 @@ public sealed class WrapperFlatteningTests
     [Fact]
     public void Flatten_SingleWrapper_ExposesInnerScalars()
     {
-        const string Src = "<wrapper><inner><a>1</a><b>two</b></inner></wrapper>";
-        string source = GetGeneratedSource("envelope.xml", Src);
+        const string src = "<wrapper><inner><a>1</a><b>two</b></inner></wrapper>";
+        string source = GetGeneratedSource("envelope.xml", src);
 
         // <inner>'s scalars become properties of the model.
         source.Should().Contain("long A");
@@ -39,8 +39,8 @@ public sealed class WrapperFlatteningTests
     [Fact]
     public void Flatten_RecursiveWrapper_DescendsAllLevels()
     {
-        const string Src = "<a><b><c><x>1</x></c></b></a>";
-        string source = GetGeneratedSource("nested.xml", Src);
+        const string src = "<a><b><c><x>1</x></c></b></a>";
+        string source = GetGeneratedSource("nested.xml", src);
 
         source.Should().Contain("long X");
         // Three-level descent — both intermediate wrappers walked.
@@ -52,8 +52,8 @@ public sealed class WrapperFlatteningTests
     [Fact]
     public void Flatten_StopsAtAttributes()
     {
-        const string Src = "<wrapper id=\"1\"><inner><a>1</a></inner></wrapper>";
-        string source = GetGeneratedSource("attrs.xml", Src);
+        const string src = "<wrapper id=\"1\"><inner><a>1</a></inner></wrapper>";
+        string source = GetGeneratedSource("attrs.xml", src);
 
         // Literal root carries `id` → wrapper-flatten does not descend; <wrapper>
         // is the effective root, so `Id` becomes a scalar property here. Step 8
@@ -71,8 +71,8 @@ public sealed class WrapperFlatteningTests
         // so <order> stays as the effective root with `Currency` exposed as a
         // scalar. Step 8 then sees <customer> as a Pattern A wrapper around
         // <name> and emits a Customer property + CustomerGroup nested type.
-        const string Src = "<order><currency>RUB</currency><customer><name>Alice</name></customer></order>";
-        string source = GetGeneratedSource("order.xml", Src);
+        const string src = "<order><currency>RUB</currency><customer><name>Alice</name></customer></order>";
+        string source = GetGeneratedSource("order.xml", src);
 
         source.Should().Contain("string Currency");
         source.Should().Contain("CustomerGroup Customer");
@@ -82,8 +82,8 @@ public sealed class WrapperFlatteningTests
     public void Flatten_StopsAtMultipleElementChildren()
     {
         // Two children → not a wrapper. Each becomes a scalar property.
-        const string Src = "<order><a/><b/></order>";
-        string source = GetGeneratedSource("order.xml", Src);
+        const string src = "<order><a/><b/></order>";
+        string source = GetGeneratedSource("order.xml", src);
 
         // Self-closing children with no attributes are pure-text scalars
         // (string, empty content) — both should appear.
@@ -97,8 +97,8 @@ public sealed class WrapperFlatteningTests
     [Fact]
     public void Flatten_PathPrefixIsRootRelative()
     {
-        const string Src = "<BLRWBL><DeliveryNote><Currency>BYN</Currency></DeliveryNote></BLRWBL>";
-        string source = GetGeneratedSource("blrwbl.sample.xml", Src);
+        const string src = "<BLRWBL><DeliveryNote><Currency>BYN</Currency></DeliveryNote></BLRWBL>";
+        string source = GetGeneratedSource("blrwbl.sample.xml", src);
 
         // Setter records "/Currency", not "/BLRWBL/DeliveryNote/Currency".
         source.Should().Contain("\"/Currency\"");
@@ -111,8 +111,8 @@ public sealed class WrapperFlatteningTests
     {
         // Even with flattening, the parse-time root-name validation refers
         // to the LITERAL root, not the effective root.
-        const string Src = "<BLRWBL><DeliveryNote><Currency>BYN</Currency></DeliveryNote></BLRWBL>";
-        string source = GetGeneratedSource("blrwbl.sample.xml", Src);
+        const string src = "<BLRWBL><DeliveryNote><Currency>BYN</Currency></DeliveryNote></BLRWBL>";
+        string source = GetGeneratedSource("blrwbl.sample.xml", src);
 
         source.Should().Contain("Expected <BLRWBL> at root");
         source.Should().NotContain("Expected <DeliveryNote>");
@@ -124,8 +124,8 @@ public sealed class WrapperFlatteningTests
         // When the literal root IS the effective root, the emitted source
         // passes `root` directly to the constructor — no `effectiveRoot`
         // intermediate is generated.
-        const string Src = "<order><currency>RUB</currency></order>";
-        string source = GetGeneratedSource("order.xml", Src);
+        const string src = "<order><currency>RUB</currency></order>";
+        string source = GetGeneratedSource("order.xml", src);
 
         source.Should().Contain("return new OrderXml(source, root);");
         source.Should().NotContain("effectiveRoot");
@@ -145,7 +145,7 @@ public sealed class WrapperFlatteningTests
         var generator = new StructuraXmlGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, xmlContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

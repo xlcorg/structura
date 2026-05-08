@@ -146,7 +146,7 @@ public sealed class SmallOrderXmlRoundTripTests
     [Fact]
     public void StringWithEntityRef_RoundTripsThroughDecodedValue()
     {
-        const string SourceWithEntity =
+        const string sourceWithEntity =
             "<?xml version=\"1.0\"?>\n" +
             "<order>\n" +
             "  <currency>R&#85;B</currency>\n" +
@@ -154,13 +154,13 @@ public sealed class SmallOrderXmlRoundTripTests
             "  <is_priority>false</is_priority>\n" +
             "</order>";
 
-        var order = SourceWithEntity.ParseXml<SmallOrderXml>();
+        var order = sourceWithEntity.ParseXml<SmallOrderXml>();
 
         // Decoded value matches the unescaped string.
         order.Currency.Should().Be("RUB");
 
         // Without mutation the original (escaped) literal is preserved verbatim.
-        order.ToXml().Should().Be(SourceWithEntity);
+        order.ToXml().Should().Be(sourceWithEntity);
 
         // Mutating writes a freshly encoded literal, replacing the original span.
         order.Currency = "USD";

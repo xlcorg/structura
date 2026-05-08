@@ -12,61 +12,61 @@ public sealed class XmlSourceParserTests
     [Fact]
     public void Parse_ElementWithTextContent_PreservesInnerSpan()
     {
-        const string Src = "<currency>RUB</currency>";
+        const string src = "<currency>RUB</currency>";
 
-        XmlSourceElement el = XmlSourceParser.Parse(Src);
+        XmlSourceElement el = XmlSourceParser.Parse(src);
 
         el.Name.Should().Be("currency");
         el.IsPureText.Should().BeTrue();
-        Src.Substring(el.InnerSpan.Start, el.InnerSpan.Length).Should().Be("RUB");
-        Src.Substring(el.Span.Start, el.Span.Length).Should().Be(Src);
+        src.Substring(el.InnerSpan.Start, el.InnerSpan.Length).Should().Be("RUB");
+        src.Substring(el.Span.Start, el.Span.Length).Should().Be(src);
     }
 
     [Fact]
     public void Parse_SelfClosingElement_HasZeroLengthInnerSpan()
     {
-        const string Src = "<empty/>";
+        const string src = "<empty/>";
 
-        XmlSourceElement el = XmlSourceParser.Parse(Src);
+        XmlSourceElement el = XmlSourceParser.Parse(src);
 
         el.Children.Should().BeEmpty();
         el.InnerSpan.Length.Should().Be(0);
-        el.Span.Length.Should().Be(Src.Length);
+        el.Span.Length.Should().Be(src.Length);
     }
 
     [Fact]
     public void Parse_NestedElements_ExposeChildrenAndCorrectSpans()
     {
-        const string Src = "<order><currency>RUB</currency><version>7</version></order>";
+        const string src = "<order><currency>RUB</currency><version>7</version></order>";
 
-        XmlSourceElement root = XmlSourceParser.Parse(Src);
+        XmlSourceElement root = XmlSourceParser.Parse(src);
 
         root.Name.Should().Be("order");
         root.Children.OfType<XmlSourceElement>().Should().HaveCount(2);
 
         XmlSourceElement currency = root.RequireElement("currency");
-        Src.Substring(currency.InnerSpan.Start, currency.InnerSpan.Length).Should().Be("RUB");
+        src.Substring(currency.InnerSpan.Start, currency.InnerSpan.Length).Should().Be("RUB");
 
         XmlSourceElement version = root.RequireElement("version");
-        Src.Substring(version.InnerSpan.Start, version.InnerSpan.Length).Should().Be("7");
+        src.Substring(version.InnerSpan.Start, version.InnerSpan.Length).Should().Be("7");
     }
 
     [Fact]
     public void Parse_AttributesWithBothQuoteStyles()
     {
-        const string Src = "<order id=\"42\" status='paid'/>";
+        const string src = "<order id=\"42\" status='paid'/>";
 
-        XmlSourceElement el = XmlSourceParser.Parse(Src);
+        XmlSourceElement el = XmlSourceParser.Parse(src);
 
         el.Attributes.Should().HaveCount(2);
 
         XmlSourceAttribute id = el.RequireAttribute("id");
         id.Value.Should().Be("42");
-        Src.Substring(id.ValueSpan.Start, id.ValueSpan.Length).Should().Be("\"42\"");
+        src.Substring(id.ValueSpan.Start, id.ValueSpan.Length).Should().Be("\"42\"");
 
         XmlSourceAttribute status = el.RequireAttribute("status");
         status.Value.Should().Be("paid");
-        Src.Substring(status.ValueSpan.Start, status.ValueSpan.Length).Should().Be("'paid'");
+        src.Substring(status.ValueSpan.Start, status.ValueSpan.Length).Should().Be("'paid'");
     }
 
     [Theory]
@@ -86,19 +86,19 @@ public sealed class XmlSourceParserTests
     [Fact]
     public void Parse_PreservesXmlDeclaration_RootSpanStartsAfterIt()
     {
-        const string Src = "<?xml version=\"1.0\"?>\n<root/>";
+        const string src = "<?xml version=\"1.0\"?>\n<root/>";
 
-        XmlSourceElement root = XmlSourceParser.Parse(Src);
+        XmlSourceElement root = XmlSourceParser.Parse(src);
 
-        root.Span.Start.Should().Be(Src.IndexOf("<root", StringComparison.Ordinal));
+        root.Span.Start.Should().Be(src.IndexOf("<root", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Parse_SkipsCommentsAndWhitespace()
     {
-        const string Src = "<!-- intro -->\n<root>\n  <a>1</a>\n  <!-- between -->\n  <b>2</b>\n</root>";
+        const string src = "<!-- intro -->\n<root>\n  <a>1</a>\n  <!-- between -->\n  <b>2</b>\n</root>";
 
-        XmlSourceElement root = XmlSourceParser.Parse(Src);
+        XmlSourceElement root = XmlSourceParser.Parse(src);
 
         root.RequireElement("a");
         root.RequireElement("b");
@@ -107,9 +107,9 @@ public sealed class XmlSourceParserTests
     [Fact]
     public void Parse_CdataSection_ExposesRawPayloadAsText()
     {
-        const string Src = "<x><![CDATA[<<raw & stuff>>]]></x>";
+        const string src = "<x><![CDATA[<<raw & stuff>>]]></x>";
 
-        XmlSourceElement el = XmlSourceParser.Parse(Src);
+        XmlSourceElement el = XmlSourceParser.Parse(src);
 
         el.Children.Should().HaveCount(1);
         ((XmlSourceText)el.Children[0]).Value.Should().Be("<<raw & stuff>>");
@@ -132,27 +132,27 @@ public sealed class XmlSourceParserTests
     [Fact]
     public void Parse_DocType_Skipped_RootSpanStartsAfterIt()
     {
-        const string Src =
+        const string src =
             "<?xml version=\"1.0\"?>\n" +
             "<!DOCTYPE library [\n" +
             "    <!ENTITY company \"TestCorp\">\n" +
             "]>\n" +
             "<library/>";
 
-        XmlSourceElement root = XmlSourceParser.Parse(Src);
+        XmlSourceElement root = XmlSourceParser.Parse(src);
 
         root.Name.Should().Be("library");
-        root.Span.Start.Should().Be(Src.IndexOf("<library", StringComparison.Ordinal));
+        root.Span.Start.Should().Be(src.IndexOf("<library", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Parse_UnknownEntityReference_PreservedAsLiteralText()
     {
-        const string Src = "<x>Hello &company; World</x>";
+        const string src = "<x>Hello &company; World</x>";
 
-        XmlSourceElement el = XmlSourceParser.Parse(Src);
+        XmlSourceElement el = XmlSourceParser.Parse(src);
 
-        XmlSourceText text = (XmlSourceText)el.Children[0];
+        var text = (XmlSourceText)el.Children[0];
         text.Value.Should().Be("Hello &company; World");
     }
 

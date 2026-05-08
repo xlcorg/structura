@@ -53,9 +53,9 @@ public sealed class ConsoleDiffReporterTests
     [Fact]
     public void Print_ChangeOnFirstLine_LineNumberIs1()
     {
-        const string SingleLine = "\"RUB\"";
+        const string singleLine = "\"RUB\"";
         var change = new DocumentChange("/", new TextSpan(0, 5), "\"RUB\"", "\"USD\"");
-        var doc = new FakeStructuraDocument(SingleLine, new List<DocumentChange> { change });
+        var doc = new FakeStructuraDocument(singleLine, new List<DocumentChange> { change });
         var sw = new StringWriter();
 
         ConsoleDiffReporter.Print(doc, sw);

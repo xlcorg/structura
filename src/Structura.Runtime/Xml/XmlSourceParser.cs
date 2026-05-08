@@ -124,9 +124,9 @@ public static class XmlSourceParser
             // Scan forward looking for either ']>' (closes a subset) or '>'
             // (closes a subset-less DOCTYPE). Track depth in case of nested
             // angle brackets inside the subset (rare but possible).
-            int depthAngle = 0;
+            var depthAngle = 0;
             int p = _pos + "<!DOCTYPE".Length;
-            bool insideSubset = false;
+            var insideSubset = false;
             while (p < _source.Length)
             {
                 char c = _source[p];

@@ -186,8 +186,8 @@ public sealed class BlrwblSampleParseTests
 
         // Walk through the changes and verify that the bytes between them
         // (and before the first / after the last) are byte-identical to the original.
-        int sourcePos = 0;
-        int modPos = 0;
+        var sourcePos = 0;
+        var modPos = 0;
         foreach (DocumentChange ch in changes)
         {
             int beforeLen = ch.Span.Start - sourcePos;

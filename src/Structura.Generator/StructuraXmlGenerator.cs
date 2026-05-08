@@ -37,7 +37,7 @@ public sealed class StructuraXmlGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(models, static (spc, model) =>
         {
             string fileName = Path.GetFileName(model.filePath);
-            Location fileLocation = Location.Create(
+            var fileLocation = Location.Create(
                 model.filePath,
                 Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(0, 0),
                 new Microsoft.CodeAnalysis.Text.LinePositionSpan(

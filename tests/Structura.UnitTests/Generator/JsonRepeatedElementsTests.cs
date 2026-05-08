@@ -27,9 +27,9 @@ public sealed class JsonRepeatedElementsTests
     [Fact]
     public void ObjectArray_PluralKey_DepluralisesItemClassName()
     {
-        const string Src = "{\"books\":[{\"id\":\"a\"}]}";
+        const string src = "{\"books\":[{\"id\":\"a\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class Book");
         source.Should().Contain("IReadOnlyList<Book> Books");
@@ -41,9 +41,9 @@ public sealed class JsonRepeatedElementsTests
         // 'data' has no trailing 's' to drop — emitter must avoid CS0102 by
         // suffixing with "Item" rather than reusing "Data" for both property
         // and class.
-        const string Src = "{\"data\":[{\"k\":\"v\"}]}";
+        const string src = "{\"data\":[{\"k\":\"v\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class DataItem");
         source.Should().Contain("IReadOnlyList<DataItem> Data");
@@ -56,9 +56,9 @@ public sealed class JsonRepeatedElementsTests
     {
         // A decimal is detected when at least one observed number has a
         // fractional component or scientific notation.
-        const string Src = "{\"prices\":[1.5,2.0,3.25]}";
+        const string src = "{\"prices\":[1.5,2.0,3.25]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("IReadOnlyList<decimal> Prices");
     }
@@ -67,9 +67,9 @@ public sealed class JsonRepeatedElementsTests
     public void PrimitiveArray_NoItemClassEmitted_BecauseLeavesAreScalars()
     {
         // Sanity — primitive arrays must not produce an item class.
-        const string Src = "{\"tags\":[\"a\",\"b\"]}";
+        const string src = "{\"tags\":[\"a\",\"b\"]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().NotContain("partial class Tag");
         source.Should().NotContain("partial class Tags");
@@ -83,9 +83,9 @@ public sealed class JsonRepeatedElementsTests
         // items[].tags is an array of strings inside the item shape. The Item
         // class must expose IReadOnlyList<string> Tags, and the per-item path
         // composition is the runtime concern.
-        const string Src = "{\"items\":[{\"sku\":\"A\",\"tags\":[\"x\",\"y\"]}]}";
+        const string src = "{\"items\":[{\"sku\":\"A\",\"tags\":[\"x\",\"y\"]}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class Item");
         source.Should().Contain("IReadOnlyList<string> Tags");
@@ -96,10 +96,10 @@ public sealed class JsonRepeatedElementsTests
     {
         // items[].lines is itself an object-array, generating a "Line" class
         // nested in the parent class output.
-        const string Src =
+        const string src =
             "{\"items\":[{\"id\":1,\"lines\":[{\"qty\":2}]}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class Item");
         source.Should().Contain("public sealed partial class Line");
@@ -113,9 +113,9 @@ public sealed class JsonRepeatedElementsTests
     {
         // Step 9 main chunk decided to bake the trailing slash into the
         // path-prefix literal: "/items/" + idx, not "/items" + "/" + idx.
-        const string Src = "{\"items\":[{\"id\":1}]}";
+        const string src = "{\"items\":[{\"id\":1}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("\"/items/\" + idx_items");
         source.Should().NotContain("\"/items\" + \"/\"");
@@ -128,10 +128,10 @@ public sealed class JsonRepeatedElementsTests
     {
         // The diagnostic walker must recurse into items[].x to surface
         // empty-array warnings at any depth.
-        const string Src =
+        const string src =
             "{\"items\":[{\"id\":1,\"flags\":[]}]}";
 
-        GeneratorDriverRunResult result = RunGenerator("doc.json", Src);
+        GeneratorDriverRunResult result = RunGenerator("doc.json", src);
 
         result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0011")
             .Which.GetMessage().Should().Contain("flags");
@@ -140,10 +140,10 @@ public sealed class JsonRepeatedElementsTests
     [Fact]
     public void HeterogeneousArray_InsideNestedObject_StillFiresSTR0010()
     {
-        const string Src =
+        const string src =
             "{\"customer\":{\"mixed\":[1,\"two\"]}}";
 
-        GeneratorDriverRunResult result = RunGenerator("doc.json", Src);
+        GeneratorDriverRunResult result = RunGenerator("doc.json", src);
 
         result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0010")
             .Which.GetMessage().Should().Contain("mixed");
@@ -170,7 +170,7 @@ public sealed class JsonRepeatedElementsTests
         var generator = new StructuraJsonGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, jsonContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

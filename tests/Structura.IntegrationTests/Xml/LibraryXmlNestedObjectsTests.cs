@@ -97,7 +97,7 @@ public sealed class LibraryXmlNestedObjectsTests
     {
         // Only b005 has <reviews>. Items[4] is b005 in document order.
         var doc = LoadSample().ParseXml<LibrarySampleXml>();
-        var b005Reviews = doc.Books[4].Reviews;
+        IReadOnlyList<LibrarySampleXml.Review> b005Reviews = doc.Books[4].Reviews;
 
         b005Reviews.Should().HaveCount(2);
         b005Reviews[0].Reviewer.Name.Should().Be("Иван Петров");

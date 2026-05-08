@@ -232,7 +232,7 @@ internal static class JsonModelEmitter
     /// </summary>
     private static string GetEnclosingClassName(StringBuilder sb)
     {
-        string s = sb.ToString();
+        var s = sb.ToString();
         int markerEnd = s.LastIndexOf("partial class ", StringComparison.Ordinal);
         if (markerEnd < 0)
         {

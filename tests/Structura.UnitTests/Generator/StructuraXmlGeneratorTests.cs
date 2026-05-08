@@ -65,13 +65,13 @@ public sealed class StructuraXmlGeneratorTests
         // <title lang="ru">War</title> mixes a non-xmlns attribute with text
         // content — that's the residual STR0009 case. The element must NOT
         // surface as a property on the model.
-        const string Src =
+        const string src =
             "<order>\n" +
             "  <currency>RUB</currency>\n" +
             "  <title lang=\"ru\">War</title>\n" +
             "</order>";
 
-        string source = GetGeneratedSource("order.xml", Src);
+        string source = GetGeneratedSource("order.xml", src);
         source.Should().NotContain(" Title ");
         source.Should().NotContain("TitleType");
     }
@@ -79,8 +79,8 @@ public sealed class StructuraXmlGeneratorTests
     [Fact]
     public void Generator_EmitsScalarProperty_FromRootAttribute()
     {
-        const string Src = "<order id=\"42\" status=\"paid\"/>";
-        string source = GetGeneratedSource("order.xml", Src);
+        const string src = "<order id=\"42\" status=\"paid\"/>";
+        string source = GetGeneratedSource("order.xml", src);
 
         source.Should().Contain("long Id");
         source.Should().Contain("string Status");
@@ -118,8 +118,8 @@ public sealed class StructuraXmlGeneratorTests
     [Fact]
     public void Generator_RootNameDifferentFromClassName_EmitsValidationCheck()
     {
-        const string Src = "<DeliveryNote><id>1</id></DeliveryNote>";
-        string source = GetGeneratedSource("waybill.xml", Src);
+        const string src = "<DeliveryNote><id>1</id></DeliveryNote>";
+        string source = GetGeneratedSource("waybill.xml", src);
 
         // The generated ParseFromXml validates the root element name matches
         // the literal name from the sample file.
@@ -141,7 +141,7 @@ public sealed class StructuraXmlGeneratorTests
         var generator = new StructuraXmlGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, xmlContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

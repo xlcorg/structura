@@ -139,20 +139,20 @@ public sealed class SmallOrderRoundTripTests
     [Fact]
     public void StringWithEscapes_RoundTripsThroughDecodedValue()
     {
-        const string SourceWithEscape =
+        const string sourceWithEscape =
             "{\n" +
             "  \"currency\": \"R\\u0055B\",\n" +
             "  \"version\": 1,\n" +
             "  \"is_priority\": false\n" +
             "}";
 
-        var order = SourceWithEscape.ParseJson<SmallOrder>();
+        var order = sourceWithEscape.ParseJson<SmallOrder>();
 
         // Decoded value matches the unescaped string.
         order.Currency.Should().Be("RUB");
 
         // Without mutation the original (escaped) literal is preserved verbatim.
-        order.ToJson().Should().Be(SourceWithEscape);
+        order.ToJson().Should().Be(sourceWithEscape);
 
         // Mutating writes a freshly encoded literal, replacing the original span.
         order.Currency = "USD";

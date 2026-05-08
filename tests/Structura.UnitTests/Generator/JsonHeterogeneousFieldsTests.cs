@@ -29,10 +29,10 @@ public sealed class JsonHeterogeneousFieldsTests
         // 'note' present only in second item → optional → emitter uses
         // FindProperty (not RequireProperty) so the constructor doesn't
         // throw on the first item's missing key.
-        const string Src =
+        const string payload =
             "{\"items\":[{\"id\":1},{\"id\":2,\"note\":\"x\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("private readonly bool _noteIsPresent;");
         source.Should().Contain("FindProperty(\"note\")");
@@ -44,10 +44,10 @@ public sealed class JsonHeterogeneousFieldsTests
     {
         // The throwing setter must mention BOTH the C# property name and
         // the original JSON key so users can locate the missing source span.
-        const string Src =
+        const string payload =
             "{\"items\":[{\"id\":1},{\"id\":2,\"note\":\"x\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("if (!_noteIsPresent)");
         source.Should().Contain("throw new StructuraMutationException(");
@@ -61,13 +61,13 @@ public sealed class JsonHeterogeneousFieldsTests
         // First item's getter returns the field default (string.Empty / 0L /
         // false / 0m / null) rather than throwing — read remains safe even
         // when the source key is absent.
-        const string Src =
+        const string payload =
             "{\"items\":[" +
             "{\"id\":1}," +
             "{\"id\":2,\"note\":\"x\",\"qty\":5,\"price\":1.5,\"flag\":true,\"hint\":null}" +
             "]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         // Each optional default branch emitted in the ctor:
         source.Should().Contain("noteProp is null ? string.Empty");
@@ -82,10 +82,10 @@ public sealed class JsonHeterogeneousFieldsTests
     {
         // 'id' present in both observations → in RequiredKeys → emitter
         // uses RequireProperty and never emits an IsPresent guard.
-        const string Src =
+        const string payload =
             "{\"items\":[{\"id\":1,\"sku\":\"A\"},{\"id\":2,\"sku\":\"B\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("RequireProperty(\"id\")");
         source.Should().Contain("RequireProperty(\"sku\")");
@@ -99,13 +99,13 @@ public sealed class JsonHeterogeneousFieldsTests
         // 'middle_name' is null in the first item, "Q" in the second → the
         // unioned shape is string?, with FindProperty returning null when
         // absent (here it's always present, but kind merge promotes).
-        const string Src =
+        const string payload =
             "{\"items\":[" +
             "{\"id\":1,\"middle_name\":null}," +
             "{\"id\":2,\"middle_name\":\"Q\"}" +
             "]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("public string? MiddleName");
         source.Should().Contain("middleNameProp.Value is JsonSourceString s ? s.Value : null");
@@ -117,13 +117,13 @@ public sealed class JsonHeterogeneousFieldsTests
         // 'qty' is long in the first item, "5" string in the second. The two
         // primitive kinds cannot merge → the field is dropped from the union
         // shape rather than being emitted with an unsafe cast at parse time.
-        const string Src =
+        const string payload =
             "{\"items\":[" +
             "{\"id\":1,\"qty\":2}," +
             "{\"id\":2,\"qty\":\"two\"}" +
             "]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("public sealed partial class Item");
         source.Should().NotContain("Qty");
@@ -135,10 +135,10 @@ public sealed class JsonHeterogeneousFieldsTests
     {
         // Item observations share no scalar keys at all (other than nothing).
         // The unioned shape has both as optional with IsPresent guards.
-        const string Src =
+        const string payload =
             "{\"items\":[{\"a\":1},{\"b\":2}]}";
 
-        string source = Generate(Src);
+        string source = Generate(payload);
 
         source.Should().Contain("_aIsPresent");
         source.Should().Contain("_bIsPresent");
@@ -165,7 +165,7 @@ public sealed class JsonHeterogeneousFieldsTests
         var generator = new StructuraJsonGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, jsonContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

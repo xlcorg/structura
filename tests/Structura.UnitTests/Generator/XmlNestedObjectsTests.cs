@@ -31,12 +31,12 @@ public sealed class XmlNestedObjectsTests
     [Fact]
     public void SingleNestedObject_EmitsTypedPropertyAndPartialClass()
     {
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<customer><name>Alice</name><email>a@x</email></customer>" +
             "</order>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public CustomerType Customer");
         source.Should().Contain("public sealed partial class CustomerType");
@@ -45,12 +45,12 @@ public sealed class XmlNestedObjectsTests
     [Fact]
     public void NestedObject_RootCtor_PassesLiteralPathPrefix()
     {
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<customer><name>Alice</name><email>a@x</email></customer>" +
             "</order>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         // Root-level construction: literal path "/Customer", not _pathPrefix + …
         source.Should().Contain("new CustomerType(_ctx, \"/Customer\"");
@@ -59,7 +59,7 @@ public sealed class XmlNestedObjectsTests
     [Fact]
     public void RecursiveNesting_ComposesPathAtEachDepth()
     {
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<customer>" +
             "<address><city>NYC</city><zip>10001</zip></address>" +
@@ -67,7 +67,7 @@ public sealed class XmlNestedObjectsTests
             "</customer>" +
             "</order>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         // Two nested classes are produced.
         source.Should().Contain("class CustomerType");
@@ -88,12 +88,12 @@ public sealed class XmlNestedObjectsTests
         // it to MetaInfo / MetaInfoType, both valid C# names. The version
         // attribute on root is here to suppress the wrapper-chain descent
         // so meta:info actually classifies as a nested object.
-        const string Src =
+        const string src =
             "<root xmlns:meta=\"u\" version=\"1\">" +
             "<meta:info><meta:total>5</meta:total><meta:label>x</meta:label></meta:info>" +
             "</root>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public MetaInfoType MetaInfo");
         source.Should().Contain("class MetaInfoType");
@@ -111,12 +111,12 @@ public sealed class XmlNestedObjectsTests
         // Nested-object scalars are required by construction (single
         // observation) so the ctor uses RequireElement, not FindElement +
         // IsPresent guard.
-        const string Src =
+        const string src =
             "<order><currency>USD</currency>" +
             "<customer><name>Alice</name><email>a@x</email></customer>" +
             "</order>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("element.RequireElement(\"name\")");
         // The IsPresent flag is the item-scalar pattern; nested scalars
@@ -131,13 +131,13 @@ public sealed class XmlNestedObjectsTests
         // children. The body should be built from the union of observations
         // in the items, and the type emitted exactly once at the outer
         // scope.
-        const string Src =
+        const string src =
             "<library><books>" +
             "<book><title>A</title><author><first>X</first><last>O</last></author></book>" +
             "<book><title>B</title><author><first>Y</first><last>P</last></author></book>" +
             "</books></library>";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public AuthorType Author");
         source.Should().Contain("class AuthorType");
@@ -159,9 +159,9 @@ public sealed class XmlNestedObjectsTests
         // parser rejects it as a nested object and the generator surfaces
         // STR0009 instead. (Self-closing without attributes is a pure-text
         // scalar handled by ClassifyChild and is covered elsewhere.)
-        const string Src = "<root><a>1</a><empty attr=\"x\"/></root>";
+        const string src = "<root><a>1</a><empty attr=\"x\"/></root>";
 
-        GeneratorDriverRunResult result = RunGenerator("residual.xml", Src);
+        GeneratorDriverRunResult result = RunGenerator("residual.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0009");
     }
@@ -171,9 +171,9 @@ public sealed class XmlNestedObjectsTests
     {
         // <title lang="ru">War</title> mixes a non-xmlns attribute with text
         // content — Step 11 territory, still STR0009 in Step 10.
-        const string Src = "<root><a>1</a><title lang=\"ru\">War</title></root>";
+        const string src = "<root><a>1</a><title lang=\"ru\">War</title></root>";
 
-        GeneratorDriverRunResult result = RunGenerator("title.xml", Src);
+        GeneratorDriverRunResult result = RunGenerator("title.xml", src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0009");
     }
@@ -199,7 +199,7 @@ public sealed class XmlNestedObjectsTests
         var generator = new StructuraXmlGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, xmlContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);

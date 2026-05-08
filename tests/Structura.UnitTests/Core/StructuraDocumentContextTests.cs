@@ -73,12 +73,12 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void Changes_AreOrderedByOriginalSpan()
     {
-        const string Multi = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
-        var ctx = new StructuraDocumentContext(Multi);
+        const string multi = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
+        var ctx = new StructuraDocumentContext(multi);
 
-        ctx.Record("/c", SpanOf(Multi, "3"), "Z");
-        ctx.Record("/a", SpanOf(Multi, "1"), "X");
-        ctx.Record("/b", SpanOf(Multi, "2"), "Y");
+        ctx.Record("/c", SpanOf(multi, "3"), "Z");
+        ctx.Record("/a", SpanOf(multi, "1"), "X");
+        ctx.Record("/b", SpanOf(multi, "2"), "Y");
 
         ctx.Changes.Select(static c => c.Path).Should().Equal("/a", "/b", "/c");
         ctx.ApplyEdits().Should().Be("{\"a\":\"X\",\"b\":\"Y\",\"c\":\"Z\"}");

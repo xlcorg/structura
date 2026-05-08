@@ -28,9 +28,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void NestedObject_GeneratesNestedPartialClass()
     {
-        const string Src = "{\"customer\":{\"first_name\":\"Alice\",\"age\":30}}";
+        const string src = "{\"customer\":{\"first_name\":\"Alice\",\"age\":30}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class CustomerType");
         source.Should().Contain("string FirstName");
@@ -40,9 +40,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void NestedObject_RootHasPropertyForNestedType()
     {
-        const string Src = "{\"customer\":{\"first_name\":\"Alice\"}}";
+        const string src = "{\"customer\":{\"first_name\":\"Alice\"}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public CustomerType Customer");
     }
@@ -50,9 +50,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void NestedObject_RootCtor_PassesPathPrefixToNestedCtor()
     {
-        const string Src = "{\"customer\":{\"first_name\":\"Alice\"}}";
+        const string src = "{\"customer\":{\"first_name\":\"Alice\"}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("new CustomerType(_ctx, \"/customer\"");
     }
@@ -60,9 +60,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void NestedObject_SetterRecordsNestedJsonPointer()
     {
-        const string Src = "{\"customer\":{\"first_name\":\"Alice\"}}";
+        const string src = "{\"customer\":{\"first_name\":\"Alice\"}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("_pathPrefix + \"/first_name\"");
     }
@@ -70,9 +70,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void NestedObject_DeeplyNested_GeneratesEachLevel()
     {
-        const string Src = "{\"customer\":{\"prefs\":{\"newsletter\":true}}}";
+        const string src = "{\"customer\":{\"prefs\":{\"newsletter\":true}}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class CustomerType");
         source.Should().Contain("public sealed partial class PrefsType");
@@ -84,9 +84,9 @@ public sealed class JsonModelEmitterTests
     public void NestedObject_KebabCaseKey_EscapedInPath()
     {
         // marketing-consent contains no '/' or '~' — JSON Pointer is /marketing-consent.
-        const string Src = "{\"prefs\":{\"marketing-consent\":true}}";
+        const string src = "{\"prefs\":{\"marketing-consent\":true}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("bool MarketingConsent");
         source.Should().Contain("_pathPrefix + \"/marketing-consent\"");
@@ -97,9 +97,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void PrimitiveArray_OfStrings_EmitsIReadOnlyListString()
     {
-        const string Src = "{\"tags\":[\"a\",\"b\"]}";
+        const string src = "{\"tags\":[\"a\",\"b\"]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("IReadOnlyList<string> Tags");
     }
@@ -107,9 +107,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void PrimitiveArray_OfLongs_EmitsIReadOnlyListLong()
     {
-        const string Src = "{\"years\":[1865,1872]}";
+        const string src = "{\"years\":[1865,1872]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("IReadOnlyList<long> Years");
     }
@@ -117,9 +117,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void PrimitiveArray_OfBooleans_EmitsIReadOnlyListBool()
     {
-        const string Src = "{\"flags\":[true,false]}";
+        const string src = "{\"flags\":[true,false]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("IReadOnlyList<bool> Flags");
     }
@@ -132,9 +132,9 @@ public sealed class JsonModelEmitterTests
         // The JSON key 'items' (already plural) becomes the property name
         // 'Items' and is depluralised to 'Item' for the item class — avoids
         // C# 'class same as property' confusion. Mirrors XML's Lines / Line.
-        const string Src = "{\"items\":[{\"id\":1,\"sku\":\"A\"}]}";
+        const string src = "{\"items\":[{\"id\":1,\"sku\":\"A\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("public sealed partial class Item");
         source.Should().Contain("IReadOnlyList<Item> Items");
@@ -143,9 +143,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void ObjectArray_ItemPathPrefix_IncludesIndex()
     {
-        const string Src = "{\"items\":[{\"id\":1}]}";
+        const string src = "{\"items\":[{\"id\":1}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         // Root constructor builds each item with a pathPrefix of the form
         // "/items/0", "/items/1", ... composed at runtime.
@@ -155,9 +155,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void ObjectArray_ItemSetter_UsesPathPrefix()
     {
-        const string Src = "{\"items\":[{\"sku\":\"A\"}]}";
+        const string src = "{\"items\":[{\"sku\":\"A\"}]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("_pathPrefix + \"/sku\"");
     }
@@ -169,13 +169,13 @@ public sealed class JsonModelEmitterTests
     {
         // First item has 'note', second does not → Note is in the union with
         // an _noteIsPresent guard and a throwing setter when absent.
-        const string Src =
+        const string src =
             "{\"items\":[" +
             "{\"id\":1,\"note\":\"x\"}," +
             "{\"id\":2}" +
             "]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("string Note");
         source.Should().Contain("_noteIsPresent");
@@ -186,13 +186,13 @@ public sealed class JsonModelEmitterTests
     public void HeterogeneousItems_RequiredFields_HaveNoIsPresentGuard()
     {
         // 'id' is present in both items → required, no IsPresent flag needed.
-        const string Src =
+        const string src =
             "{\"items\":[" +
             "{\"id\":1,\"sku\":\"A\"}," +
             "{\"id\":2,\"sku\":\"B\"}" +
             "]}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().NotContain("_idIsPresent");
         source.Should().NotContain("_skuIsPresent");
@@ -203,9 +203,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void EmptyArray_EmitsSTR0011Warning_AndSkipsProperty()
     {
-        const string Src = "{\"version\":1,\"archive\":[]}";
+        const string src = "{\"version\":1,\"archive\":[]}";
 
-        GeneratorDriverRunResult result = RunGenerator("doc.json", Src);
+        GeneratorDriverRunResult result = RunGenerator("doc.json", src);
 
         result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0011")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -215,9 +215,9 @@ public sealed class JsonModelEmitterTests
     [Fact]
     public void HeterogeneousArray_EmitsSTR0010Warning_AndSkipsProperty()
     {
-        const string Src = "{\"version\":1,\"mixed\":[1,\"two\"]}";
+        const string src = "{\"version\":1,\"mixed\":[1,\"two\"]}";
 
-        GeneratorDriverRunResult result = RunGenerator("doc.json", Src);
+        GeneratorDriverRunResult result = RunGenerator("doc.json", src);
 
         result.Diagnostics.Should().ContainSingle(d => d.Id == "STR0010")
             .Which.Severity.Should().Be(DiagnosticSeverity.Warning);
@@ -230,9 +230,9 @@ public sealed class JsonModelEmitterTests
     public void RootScalars_StillEmitted_WithCustomerSibling()
     {
         // Sanity: nested object emission must not shadow root-level scalars.
-        const string Src = "{\"currency\":\"USD\",\"customer\":{\"first_name\":\"Alice\"}}";
+        const string src = "{\"currency\":\"USD\",\"customer\":{\"first_name\":\"Alice\"}}";
 
-        string source = Generate(Src);
+        string source = Generate(src);
 
         source.Should().Contain("string Currency");
         source.Should().Contain("public sealed partial class CustomerType");
@@ -264,7 +264,7 @@ public sealed class JsonModelEmitterTests
         var generator = new StructuraJsonGenerator();
         var additionalText = new InMemoryAdditionalText(fileName, jsonContent);
 
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: new[] { generator.AsSourceGenerator() },
                 additionalTexts: ImmutableArray.Create<AdditionalText>(additionalText))
             .RunGenerators(compilation);
