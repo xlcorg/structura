@@ -15,7 +15,7 @@ using Xunit;
 namespace Structura.UnitTests.Generator;
 
 /// <summary>
-/// Verifies that <see cref="StructuraDiagnostics"/> descriptors STR0001–STR0009
+/// Verifies that <see cref="StructuraDiagnostics"/> descriptors STR0001–STR0011
 /// are emitted by the generators under the expected conditions.
 /// </summary>
 public sealed class StructuraDiagnosticsTests
@@ -102,6 +102,50 @@ public sealed class StructuraDiagnosticsTests
         GeneratorDriverRunResult result = RunXmlGenerator("dedup.xml", Src);
 
         result.Diagnostics.Count(d => d.Id == "STR0009").Should().Be(1);
+    }
+
+    [Fact]
+    public void Generator_HeterogeneousJsonArray_EmitsSTR0010Warning()
+    {
+        // Mixed-shape array — primitive and object items are incompatible
+        // for V1, so the property must be skipped with STR0010.
+        const string Src = "{\"v\":1,\"mixed\":[{\"a\":1},2]}";
+        GeneratorDriverRunResult result = RunJsonGenerator("hetero.json", Src);
+
+        Diagnostic diag = result.Diagnostics
+            .Should().ContainSingle(d => d.Id == "STR0010").Subject;
+        diag.Severity.Should().Be(DiagnosticSeverity.Warning);
+        diag.GetMessage().Should().Contain("mixed");
+    }
+
+    [Fact]
+    public void Generator_EmptyJsonArray_EmitsSTR0011Warning()
+    {
+        const string Src = "{\"v\":1,\"archive\":[]}";
+        GeneratorDriverRunResult result = RunJsonGenerator("empty.json", Src);
+
+        Diagnostic diag = result.Diagnostics
+            .Should().ContainSingle(d => d.Id == "STR0011").Subject;
+        diag.Severity.Should().Be(DiagnosticSeverity.Warning);
+        diag.GetMessage().Should().Contain("archive");
+    }
+
+    [Fact]
+    public void STR0009_Message_IsFormatNeutral_NoXmlAngleBrackets()
+    {
+        // Foundation rewrote STR0009 to be reusable across formats: no '<…>'
+        // decoration around element names, no V1 phrase. The XML generator
+        // still emits it, but the wording is format-neutral.
+        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
+
+        Diagnostic diag = result.Diagnostics.Should()
+            .ContainSingle(d => d.Id == "STR0009").Subject;
+
+        string message = diag.GetMessage();
+        message.Should().NotContain("<");
+        message.Should().NotContain(">");
+        message.Should().Contain("nested generation is not supported");
     }
 
     [Fact]

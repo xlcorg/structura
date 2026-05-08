@@ -269,17 +269,21 @@ internal static class GeneratorJsonParser
 
         var nestedObjects = new List<JsonGenNestedObject>();
         var collections = new List<JsonGenCollection>();
-        var seenNestedKeys = new HashSet<string>(StringComparer.Ordinal);
+        var nestedObsByName = new Dictionary<string, List<JsonGenObject>>(StringComparer.Ordinal);
+        var nestedKeyOrder = new List<string>();
         var seenCollectionKeys = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (JsonGenObject obs in observations)
         {
             foreach (JsonGenNestedObject n in obs.NestedObjects)
             {
-                if (seenNestedKeys.Add(n.Name))
+                if (!nestedObsByName.TryGetValue(n.Name, out List<JsonGenObject>? bucket))
                 {
-                    nestedObjects.Add(n);
+                    bucket = new List<JsonGenObject>();
+                    nestedObsByName.Add(n.Name, bucket);
+                    nestedKeyOrder.Add(n.Name);
                 }
+                bucket.Add(n.Object);
             }
             foreach (JsonGenCollection c in obs.Collections)
             {
@@ -288,6 +292,16 @@ internal static class GeneratorJsonParser
                     collections.Add(c);
                 }
             }
+        }
+
+        foreach (string nestedKey in nestedKeyOrder)
+        {
+            List<JsonGenObject> obsList = nestedObsByName[nestedKey];
+            string nestedTypeName = IdentifierSanitizer.ToPascalCase(nestedKey);
+            JsonGenObject merged = obsList.Count == 1
+                ? obsList[0]
+                : MergeObjectObservations(obsList, nestedTypeName);
+            nestedObjects.Add(new JsonGenNestedObject(nestedKey, merged));
         }
 
         var requiredKeys = new HashSet<string>(observations[0].RequiredKeys, StringComparer.Ordinal);
