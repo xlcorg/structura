@@ -47,6 +47,9 @@ var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 
 waybill.Currency = "USD";
 waybill.SealID = 99999;
+waybill.Document.DocumentID = "X-001";
+waybill.Shipper.GLN = 9999988880001L;
+waybill.Total.TotalAmount = 700.00m;
 
 foreach (BlrwblSampleXml.LineItem lineItem in waybill.DespatchAdviceLogisticUnitLineItem.LineItems)
 {
