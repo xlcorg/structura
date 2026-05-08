@@ -60,11 +60,20 @@ public sealed class StructuraXmlGeneratorTests
     }
 
     [Fact]
-    public void Generator_SkipsNestedElement()
+    public void Generator_SkipsResidualMixedContentElement()
     {
-        string source = GetGeneratedSource("order.xml", MinimalSample);
-        // <customer> has nested <name> — must NOT become a property.
-        source.Should().NotContain("Customer\n").And.NotContain("Customer\r");
+        // <title lang="ru">War</title> mixes a non-xmlns attribute with text
+        // content — that's the residual STR0009 case. The element must NOT
+        // surface as a property on the model.
+        const string Src =
+            "<order>\n" +
+            "  <currency>RUB</currency>\n" +
+            "  <title lang=\"ru\">War</title>\n" +
+            "</order>";
+
+        string source = GetGeneratedSource("order.xml", Src);
+        source.Should().NotContain(" Title ");
+        source.Should().NotContain("TitleType");
     }
 
     [Fact]

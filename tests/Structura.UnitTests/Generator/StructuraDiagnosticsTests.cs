@@ -79,9 +79,12 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_NestedStructural_EmitsSTR0009Warning()
     {
-        // <nested> has two children with different names → cannot be a collection
-        // wrapper → STR0009 is reported.
-        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        // <nested attr="..." >text</nested> is the residual case after Step 10:
+        // an attribute alongside text content (mixed content) is not modelled,
+        // so the element is skipped with STR0009. A pure-structural element
+        // like <nested><x>1</x><y>2</y></nested> would now be a nested object
+        // and produce no warning.
+        const string Src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
         GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
 
         result.Diagnostics.Should().Contain(d => d.Id == "STR0009")
@@ -91,17 +94,29 @@ public sealed class StructuraDiagnosticsTests
     [Fact]
     public void Generator_NestedStructural_DeduplicatesPerParentType()
     {
-        // Two <item> elements both have a <meta> child with heterogeneous
-        // sub-elements → only one STR0009 for the ("Item", "meta") pair.
+        // Two <item> elements both have a <meta lang="...">text</meta> child
+        // (text+attribute residual) → only one STR0009 for the
+        // ("Item", "meta") pair.
         const string Src =
             "<root><items>" +
-            "<item><id>1</id><meta><x>1</x><y>2</y></meta></item>" +
-            "<item><id>2</id><meta><a>1</a><b>2</b></meta></item>" +
+            "<item><id>1</id><meta lang=\"a\">x</meta></item>" +
+            "<item><id>2</id><meta lang=\"b\">y</meta></item>" +
             "</items></root>";
 
         GeneratorDriverRunResult result = RunXmlGenerator("dedup.xml", Src);
 
         result.Diagnostics.Count(d => d.Id == "STR0009").Should().Be(1);
+    }
+
+    [Fact]
+    public void Generator_PureStructuralElement_DoesNotEmitSTR0009()
+    {
+        // After Step 10, a single-occurrence structural element with no
+        // attributes is a nested object — no STR0009 should fire.
+        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        GeneratorDriverRunResult result = RunXmlGenerator("nested.xml", Src);
+
+        result.Diagnostics.Should().NotContain(d => d.Id == "STR0009");
     }
 
     [Fact]
@@ -135,8 +150,9 @@ public sealed class StructuraDiagnosticsTests
     {
         // Foundation rewrote STR0009 to be reusable across formats: no '<…>'
         // decoration around element names, no V1 phrase. The XML generator
-        // still emits it, but the wording is format-neutral.
-        const string Src = "<root><a>1</a><nested><x>1</x><y>2</y></nested></root>";
+        // still emits it for residual text+attribute / mixed-content cases,
+        // but the wording is format-neutral.
+        const string Src = "<root><a>1</a><nested attr=\"x\">text</nested></root>";
         GeneratorDriverRunResult result = RunXmlGenerator("structural.xml", Src);
 
         Diagnostic diag = result.Diagnostics.Should()

@@ -91,18 +91,42 @@ internal sealed class ItemTypeInfo
         string typeName,
         string xmlElementName,
         List<XmlGenProperty> scalars,
-        List<XmlGenCollection> collections)
+        List<XmlGenCollection> collections,
+        List<XmlGenNestedObject> nestedObjects)
     {
         TypeName = typeName;
         XmlElementName = xmlElementName;
         Scalars = scalars;
         Collections = collections;
+        NestedObjects = nestedObjects;
     }
 
     public string TypeName { get; }
     public string XmlElementName { get; }
     public List<XmlGenProperty> Scalars { get; }
     public List<XmlGenCollection> Collections { get; }
+    public List<XmlGenNestedObject> NestedObjects { get; }
+}
+
+// ── Nested object ────────────────────────────────────────────────────────────
+
+/// <summary>
+/// A pure-structural single-occurrence child element classified as a nested
+/// object (Step 10): the runtime exposes it as a typed property rather than
+/// flattening it. The body re-uses <see cref="ItemTypeInfo"/> because a nested
+/// object's content surface is identical to a collection item's: scalars,
+/// collections, and (recursively) further nested objects.
+/// </summary>
+internal sealed class XmlGenNestedObject
+{
+    public XmlGenNestedObject(string xmlElementName, ItemTypeInfo body)
+    {
+        XmlElementName = xmlElementName;
+        Body = body;
+    }
+
+    public string XmlElementName { get; }
+    public ItemTypeInfo Body { get; }
 }
 
 // ── Generator-side observations (for diagnostics) ─────────────────────────────
@@ -129,12 +153,14 @@ internal sealed class XmlRootInfo
         IReadOnlyList<string> wrapperChain,
         List<XmlGenProperty> scalars,
         List<XmlGenCollection> collections,
+        List<XmlGenNestedObject> nestedObjects,
         XmlGenObservations observations)
     {
         RootName = rootName;
         WrapperChain = wrapperChain;
         Scalars = scalars;
         Collections = collections;
+        NestedObjects = nestedObjects;
         Observations = observations;
     }
 
@@ -142,6 +168,7 @@ internal sealed class XmlRootInfo
     public IReadOnlyList<string> WrapperChain { get; }
     public List<XmlGenProperty> Scalars { get; }
     public List<XmlGenCollection> Collections { get; }
+    public List<XmlGenNestedObject> NestedObjects { get; }
     public XmlGenObservations Observations { get; }
 }
 
@@ -166,7 +193,7 @@ internal static class GeneratorXmlParser
         var obs = new XmlGenObservations();
         try
         {
-            int p = 0;
+            var p = 0;
             SkipProlog(xml, ref p, obs);
 
             ElementInfo? literalRoot = TryParseElementAt(xml, ref p, obs);
@@ -204,10 +231,13 @@ internal static class GeneratorXmlParser
 
             string rootTypeName = ClassNameDeriver.Derive(literalRoot.Name)
                 + "Root"; // placeholder; real type name comes from the file name in the emitter
-            (List<XmlGenProperty> scalars, List<XmlGenCollection> collections) =
+            (List<XmlGenProperty> scalars,
+             List<XmlGenCollection> collections,
+             List<XmlGenNestedObject> nestedObjects) =
                 ClassifyElementContents(xml, current, parentTypeName: current.Name, obs);
 
-            return new XmlRootInfo(literalRoot.Name, wrapperChain, scalars, collections, obs);
+            return new XmlRootInfo(
+                literalRoot.Name, wrapperChain, scalars, collections, nestedObjects, obs);
         }
         catch
         {
@@ -217,7 +247,10 @@ internal static class GeneratorXmlParser
 
     // ── Classification (recursive) ────────────────────────────────────────────
 
-    private static (List<XmlGenProperty> scalars, List<XmlGenCollection> collections)
+    private static (
+        List<XmlGenProperty> scalars,
+        List<XmlGenCollection> collections,
+        List<XmlGenNestedObject> nestedObjects)
         ClassifyElementContents(
             string xml,
             ElementInfo info,
@@ -226,6 +259,7 @@ internal static class GeneratorXmlParser
     {
         var scalars = new List<XmlGenProperty>();
         var collections = new List<XmlGenCollection>();
+        var nestedObjects = new List<XmlGenNestedObject>();
 
         // 1. Attributes (xmlns* filtered out, observation flag set).
         foreach (XmlGenProperty attr in info.Attributes)
@@ -260,16 +294,23 @@ internal static class GeneratorXmlParser
 
             if (occurrences.Count == 1)
             {
-                // Single occurrence → candidate for Shape 1/2 wrapper.
+                // Single occurrence → first try Shape 1/2 wrapper, then nested
+                // object (Step 10), else residual STR0009.
                 XmlGenCollection? wrapper = TryClassifyAsWrapper(xml, occurrences[0], obs);
                 if (wrapper != null)
                 {
                     collections.Add(wrapper);
+                    continue;
                 }
-                else
+
+                XmlGenNestedObject? nested = TryClassifyAsNestedObject(xml, occurrences[0], obs);
+                if (nested != null)
                 {
-                    obs.SkippedStructural.Add((parentTypeName, name));
+                    nestedObjects.Add(nested);
+                    continue;
                 }
+
+                obs.SkippedStructural.Add((parentTypeName, name));
             }
             else
             {
@@ -286,7 +327,57 @@ internal static class GeneratorXmlParser
             }
         }
 
-        return (scalars, collections);
+        return (scalars, collections, nestedObjects);
+    }
+
+    /// <summary>
+    /// Classifies a single-occurrence structural element as a typed nested
+    /// object: zero non-xmlns attributes and at least one child (otherwise
+    /// the caller falls back to STR0009). The body is built by the same
+    /// <see cref="ClassifyElementContents"/> path used for collection items
+    /// and the root, which gives us recursive nesting for free.
+    /// </summary>
+    private static XmlGenNestedObject? TryClassifyAsNestedObject(
+        string xml,
+        ChildRef childRef,
+        XmlGenObservations obs)
+    {
+        int p = childRef.Position;
+        ElementInfo? info = TryParseElementAt(xml, ref p, obs);
+        if (info == null)
+        {
+            return null;
+        }
+
+        if (NonXmlnsAttributeCount(info.Attributes) != 0)
+        {
+            // Element carries attributes alongside its structural payload —
+            // that's text+attribute / mixed-content territory, deferred to
+            // Step 11. The caller surfaces this as STR0009.
+            return null;
+        }
+
+        // Empty structural element (no attrs, no children). Insertion of a
+        // body is not modelled in V1, so we defer to STR0009.
+        if (info.PureTextChildren.Count == 0 && info.StructuralChildren.Count == 0)
+        {
+            return null;
+        }
+
+        string typeName = IdentifierSanitizer.ToPascalCase(info.Name) + "Type";
+        (List<XmlGenProperty> scalars,
+         List<XmlGenCollection> collections,
+         List<XmlGenNestedObject> nestedObjects) =
+            ClassifyElementContents(xml, info, parentTypeName: typeName, obs);
+
+        var body = new ItemTypeInfo(
+            typeName: typeName,
+            xmlElementName: info.Name,
+            scalars: scalars,
+            collections: collections,
+            nestedObjects: nestedObjects);
+
+        return new XmlGenNestedObject(info.Name, body);
     }
 
     private static XmlGenCollection? TryClassifyAsWrapper(
@@ -314,7 +405,7 @@ internal static class GeneratorXmlParser
             return null;
         }
         string? sharedName = null;
-        bool allPureText = true;
+        var allPureText = true;
         foreach (XmlGenProperty pt in wrapperInfo.PureTextChildren)
         {
             if (sharedName == null)
@@ -407,7 +498,7 @@ internal static class GeneratorXmlParser
         // Sibling-group items can be pure-text or structural. We re-parse each
         // occurrence to inspect its shape.
         var itemElementInfos = new List<ElementInfo>();
-        bool allPureText = true;
+        var allPureText = true;
         foreach (ChildRef occ in occurrences)
         {
             int sp = occ.Position;
@@ -467,14 +558,17 @@ internal static class GeneratorXmlParser
         XmlGenObservations obs)
     {
         // Take the union of scalars across all items. First non-empty observation
-        // determines the kind. For collections, also take the union by C# property
-        // name and merge their item types recursively.
+        // determines the kind. For collections and nested objects we also take
+        // the union by name and merge their bodies recursively.
         var scalarByName = new Dictionary<string, XmlGenProperty>(StringComparer.Ordinal);
         var collectionByName = new Dictionary<string, XmlGenCollection>(StringComparer.Ordinal);
+        var nestedByXmlName = new Dictionary<string, XmlGenNestedObject>(StringComparer.Ordinal);
 
         foreach (ElementInfo item in items)
         {
-            (List<XmlGenProperty> itemScalars, List<XmlGenCollection> itemCollections) =
+            (List<XmlGenProperty> itemScalars,
+             List<XmlGenCollection> itemCollections,
+             List<XmlGenNestedObject> itemNested) =
                 ClassifyElementContents(xml, item, parentTypeName: itemTypeName, obs);
 
             foreach (XmlGenProperty s in itemScalars)
@@ -494,19 +588,28 @@ internal static class GeneratorXmlParser
                     collectionByName[c.CSharpPropertyName] = c;
                 }
             }
+
+            foreach (XmlGenNestedObject n in itemNested)
+            {
+                if (!nestedByXmlName.ContainsKey(n.XmlElementName))
+                {
+                    nestedByXmlName[n.XmlElementName] = n;
+                }
+            }
         }
 
         return new ItemTypeInfo(
             typeName: itemTypeName,
             xmlElementName: itemElementName,
             scalars: new List<XmlGenProperty>(scalarByName.Values),
-            collections: new List<XmlGenCollection>(collectionByName.Values));
+            collections: new List<XmlGenCollection>(collectionByName.Values),
+            nestedObjects: new List<XmlGenNestedObject>(nestedByXmlName.Values));
     }
 
     private static int NonXmlnsAttributeCount(IReadOnlyList<XmlGenProperty> attributes)
     {
-        int n = 0;
-        for (int i = 0; i < attributes.Count; i++)
+        var n = 0;
+        for (var i = 0; i < attributes.Count; i++)
         {
             if (!IsXmlnsAttribute(attributes[i].Name))
             {
@@ -617,7 +720,7 @@ internal static class GeneratorXmlParser
 
         p++; // consume '>'
 
-        bool sawCloseTag = false;
+        var sawCloseTag = false;
         while (p < xml.Length)
         {
             // Bare text between tags — consume but don't expose.
@@ -719,8 +822,8 @@ internal static class GeneratorXmlParser
             return null;
         }
 
-        bool hasNonXmlnsAttr = false;
-        bool hasXmlnsAttr = false;
+        var hasNonXmlnsAttr = false;
+        var hasXmlnsAttr = false;
         while (true)
         {
             SkipWhitespace(xml, ref p);
@@ -793,7 +896,7 @@ internal static class GeneratorXmlParser
 
         p++; // consume '>'
         int contentStart = p;
-        bool sawNested = false;
+        var sawNested = false;
 
         while (p < xml.Length)
         {
@@ -946,7 +1049,7 @@ internal static class GeneratorXmlParser
     {
         // Pre: positioned at '<' of "<!DOCTYPE…>".
         int q = p + "<!DOCTYPE".Length;
-        bool insideSubset = false;
+        var insideSubset = false;
         while (q < xml.Length)
         {
             char c = xml[q];
@@ -1021,7 +1124,7 @@ internal static class GeneratorXmlParser
         {
             return false;
         }
-        for (int i = 0; i < s.Length; i++)
+        for (var i = 0; i < s.Length; i++)
         {
             if (xml[p + i] != s[i])
             {
@@ -1066,7 +1169,7 @@ internal static class GeneratorXmlParser
             return raw;
         }
         var sb = new System.Text.StringBuilder(raw.Length);
-        int i = 0;
+        var i = 0;
         while (i < raw.Length)
         {
             char c = raw[i];
