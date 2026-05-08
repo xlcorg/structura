@@ -53,6 +53,18 @@ internal static class XmlModelEmitter
             rootCollectionNames.Add(unique);
         }
 
+        // Reserve nested-object property names alongside scalars/collections.
+        var rootNestedBindings = new List<NestedObjectBinding>();
+        foreach (XmlGenNestedObject nested in info.NestedObjects)
+        {
+            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(nested.XmlElementName), usedRootNames);
+            rootNestedBindings.Add(new NestedObjectBinding(
+                xmlElementName: nested.XmlElementName,
+                propertyName: propName,
+                fieldName: ToCamel(propName),
+                typeName: NestedObjectTypeName(nested.XmlElementName)));
+        }
+
         // ── Span + value fields (root scalars) ───────────────────────────────
         foreach (RootScalar s in rootScalars)
         {
@@ -62,12 +74,20 @@ internal static class XmlModelEmitter
         }
 
         // ── Backing fields for collections ───────────────────────────────────
-        for (int i = 0; i < info.Collections.Count; i++)
+        for (var i = 0; i < info.Collections.Count; i++)
         {
             XmlGenCollection coll = info.Collections[i];
             string propName = rootCollectionNames[i];
             sb.AppendLine();
             EmitCollectionBackingField(sb, coll, propName);
+        }
+
+        // ── Backing fields for nested objects ────────────────────────────────
+        foreach (NestedObjectBinding n in rootNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("    private readonly ").Append(n.TypeName).Append(" _")
+              .Append(n.FieldName).AppendLine(";");
         }
 
         // ── Private constructor ──────────────────────────────────────────────
@@ -82,7 +102,7 @@ internal static class XmlModelEmitter
             EmitRootScalarCtor(sb, s);
         }
 
-        for (int i = 0; i < info.Collections.Count; i++)
+        for (var i = 0; i < info.Collections.Count; i++)
         {
             EmitCollectionCtor(
                 sb,
@@ -92,6 +112,16 @@ internal static class XmlModelEmitter
                 parentPathPrefixExpr: "\"\"",
                 contextExpr: "_ctx",
                 indent: "        ");
+        }
+
+        foreach (NestedObjectBinding n in rootNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("        var ").Append(n.FieldName).Append("El = root.RequireElement(\"")
+              .Append(EscapeForCsString(n.XmlElementName)).AppendLine("\");");
+            sb.Append("        _").Append(n.FieldName).Append(" = new ").Append(n.TypeName)
+              .Append("(_ctx, \"/").Append(n.PropertyName).Append("\", ")
+              .Append(n.FieldName).AppendLine("El);");
         }
 
         sb.AppendLine("    }");
@@ -136,9 +166,17 @@ internal static class XmlModelEmitter
         }
 
         // ── Collection properties ────────────────────────────────────────────
-        for (int i = 0; i < info.Collections.Count; i++)
+        for (var i = 0; i < info.Collections.Count; i++)
         {
             EmitCollectionProperty(sb, info.Collections[i], rootCollectionNames[i]);
+        }
+
+        // ── Nested-object properties ─────────────────────────────────────────
+        foreach (NestedObjectBinding n in rootNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("    public ").Append(n.TypeName).Append(' ').Append(n.PropertyName)
+              .Append(" => _").Append(n.FieldName).AppendLine(";");
         }
 
         // ── ToXml + interface implementations ────────────────────────────────
@@ -152,10 +190,15 @@ internal static class XmlModelEmitter
         sb.AppendLine("    string IStructuraDocument.CurrentText => _ctx.ApplyEdits();");
         sb.AppendLine("    IReadOnlyList<DocumentChange> IStructuraDocument.Changes => _ctx.Changes;");
 
-        // ── Nested types (wrapper + item) ────────────────────────────────────
+        // ── Nested types (wrapper + item + nested-object) ────────────────────
         foreach (XmlGenCollection coll in info.Collections)
         {
             EmitNestedTypesForCollection(sb, coll);
+        }
+
+        foreach (XmlGenNestedObject nested in info.NestedObjects)
+        {
+            EmitNestedObjectType(sb, nested);
         }
 
         sb.AppendLine("}");
@@ -174,6 +217,20 @@ internal static class XmlModelEmitter
     private static string WrapperTypeName(XmlGenCollection coll)
     {
         return ClassNameDeriver.Derive(coll.WrapperElementName!) + "Group";
+    }
+
+    /// <summary>
+    /// Nested-object TYPE names get a <c>Type</c> suffix for the same reason
+    /// as wrappers — the parent already exposes the natural Pascal-case slot
+    /// as a property (<c>waybill.Document</c>), so the class needs a distinct
+    /// name (<c>DocumentType</c>) to avoid CS0102. <see cref="IdentifierSanitizer"/>
+    /// rather than <see cref="ClassNameDeriver"/> because element names like
+    /// <c>meta:info</c> contain colons that <see cref="ClassNameDeriver"/>
+    /// preserves but C# does not allow.
+    /// </summary>
+    private static string NestedObjectTypeName(string xmlElementName)
+    {
+        return IdentifierSanitizer.ToPascalCase(xmlElementName) + "Type";
     }
 
     private static void EmitNestedTypesForCollection(StringBuilder sb, XmlGenCollection coll)
@@ -261,6 +318,17 @@ internal static class XmlModelEmitter
             itemCollectionNames.Add(unique);
         }
 
+        var itemNestedBindings = new List<NestedObjectBinding>();
+        foreach (XmlGenNestedObject inner in item.NestedObjects)
+        {
+            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(inner.XmlElementName), usedNames);
+            itemNestedBindings.Add(new NestedObjectBinding(
+                xmlElementName: inner.XmlElementName,
+                propertyName: propName,
+                fieldName: ToCamel(propName),
+                typeName: NestedObjectTypeName(inner.XmlElementName)));
+        }
+
         sb.AppendLine();
         sb.Append("    public sealed partial class ").AppendLine(item.TypeName);
         sb.AppendLine("    {");
@@ -277,10 +345,18 @@ internal static class XmlModelEmitter
         }
 
         // Backing fields for nested collections inside the item.
-        for (int i = 0; i < item.Collections.Count; i++)
+        for (var i = 0; i < item.Collections.Count; i++)
         {
             sb.AppendLine();
             EmitCollectionBackingField(sb, item.Collections[i], itemCollectionNames[i], indent: "        ");
+        }
+
+        // Backing fields for nested objects inside the item.
+        foreach (NestedObjectBinding n in itemNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("        private readonly ").Append(n.TypeName).Append(" _")
+              .Append(n.FieldName).AppendLine(";");
         }
 
         // Item constructor.
@@ -296,7 +372,7 @@ internal static class XmlModelEmitter
             EmitItemScalarCtor(sb, s);
         }
 
-        for (int i = 0; i < item.Collections.Count; i++)
+        for (var i = 0; i < item.Collections.Count; i++)
         {
             EmitCollectionCtor(
                 sb,
@@ -308,6 +384,17 @@ internal static class XmlModelEmitter
                 indent: "            ",
                 optional: true);
         }
+
+        foreach (NestedObjectBinding n in itemNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("            var ").Append(n.FieldName).Append("El = element.RequireElement(\"")
+              .Append(EscapeForCsString(n.XmlElementName)).AppendLine("\");");
+            sb.Append("            _").Append(n.FieldName).Append(" = new ").Append(n.TypeName)
+              .Append("(_ctx, _pathPrefix + \"/").Append(n.PropertyName).Append("\", ")
+              .Append(n.FieldName).AppendLine("El);");
+        }
+
         sb.AppendLine("        }");
 
         // Item scalar properties.
@@ -317,17 +404,30 @@ internal static class XmlModelEmitter
         }
 
         // Inner collection properties.
-        for (int i = 0; i < item.Collections.Count; i++)
+        for (var i = 0; i < item.Collections.Count; i++)
         {
             EmitCollectionProperty(sb, item.Collections[i], itemCollectionNames[i], indent: "        ");
         }
 
+        // Item-level nested-object properties.
+        foreach (NestedObjectBinding n in itemNestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("        public ").Append(n.TypeName).Append(' ').Append(n.PropertyName)
+              .Append(" => _").Append(n.FieldName).AppendLine(";");
+        }
+
         sb.AppendLine("    }");
 
-        // Recurse into nested collections.
+        // Recurse into nested collections and nested-object types.
         foreach (XmlGenCollection inner in item.Collections)
         {
             EmitNestedTypesForCollection(sb, inner);
+        }
+
+        foreach (XmlGenNestedObject inner in item.NestedObjects)
+        {
+            EmitNestedObjectType(sb, inner);
         }
     }
 
@@ -653,6 +753,231 @@ internal static class XmlModelEmitter
         sb.AppendLine("        }");
     }
 
+    // ── Nested-object scalar emission (RequireElement, no IsPresent guard) ──
+
+    private static void EmitNestedScalarCtor(StringBuilder sb, NestedScalar s, string indent)
+    {
+        sb.AppendLine();
+        if (s.IsAttribute)
+        {
+            sb.Append(indent).Append("var ").Append(s.LookupVarName)
+              .Append(" = element.RequireAttribute(\"")
+              .Append(EscapeForCsString(s.XmlName)).AppendLine("\");");
+            sb.Append(indent).Append("_").Append(s.CamelName).Append("ValueSpan = ")
+              .Append(s.LookupVarName).AppendLine(".ValueSpan;");
+            sb.Append(indent).Append("_").Append(s.CamelName).Append(" = ")
+              .Append(s.CtorExpr).AppendLine(";");
+        }
+        else
+        {
+            sb.Append(indent).Append("var ").Append(s.LookupVarName)
+              .Append(" = element.RequireElement(\"")
+              .Append(EscapeForCsString(s.XmlName)).AppendLine("\");");
+            sb.Append(indent).Append("_").Append(s.CamelName).Append("ValueSpan = ")
+              .Append(s.LookupVarName).AppendLine(".InnerSpan;");
+            sb.Append(indent).Append("_").Append(s.CamelName).Append(" = ")
+              .Append(s.CtorExpr).AppendLine(";");
+        }
+    }
+
+    private static void EmitNestedScalarProperty(
+        StringBuilder sb,
+        NestedScalar s,
+        string classIndent,
+        string bodyIndent)
+    {
+        sb.AppendLine();
+        sb.Append(classIndent).Append("public ").Append(s.CSharpType).Append(' ')
+          .AppendLine(s.PascalName);
+        sb.Append(classIndent).AppendLine("{");
+        sb.Append(bodyIndent).Append("get => _").Append(s.CamelName).AppendLine(";");
+        sb.Append(bodyIndent).AppendLine("set");
+        sb.Append(bodyIndent).AppendLine("{");
+
+        string innerIndent = bodyIndent + "    ";
+        sb.Append(innerIndent).Append("_").Append(s.CamelName).AppendLine(" = value;");
+        sb.Append(innerIndent).Append("_ctx.Record(_pathPrefix + \"").Append(s.PathSuffix)
+          .Append("\", _").Append(s.CamelName).Append("ValueSpan, ")
+          .Append(s.WriterCall).AppendLine(");");
+
+        sb.Append(bodyIndent).AppendLine("}");
+        sb.Append(classIndent).AppendLine("}");
+    }
+
+    private static NestedScalar BuildNestedScalar(XmlGenProperty prop, HashSet<string> usedNames)
+    {
+        string pascalName = IdentifierSanitizer.Sanitize(prop.Name, usedNames);
+        string camelName = ToCamel(pascalName);
+
+        if (prop.IsAttribute)
+        {
+            (string csharpType, string ctorExpr, string writerCall) = AttributeBindings(prop.Kind, camelName + "Attr");
+            return new NestedScalar(
+                xmlName: prop.Name,
+                pascalName: pascalName,
+                camelName: camelName,
+                csharpType: csharpType,
+                isAttribute: true,
+                lookupVarName: camelName + "Attr",
+                ctorExpr: ctorExpr,
+                writerCall: writerCall,
+                pathSuffix: "/@" + prop.Name);
+        }
+
+        // Match the safe-on-empty pattern from BuildItemScalar so empty
+        // elements (<last-name></last-name>) read as empty strings rather
+        // than crashing on Children[0].
+        var textExpr = $"({camelName}El.Children.Count > 0 && {camelName}El.Children[0] is XmlSourceText t_{camelName} ? t_{camelName}.Value : string.Empty)";
+        (string typeStr, string ctor, string writer) = ElementBindings(prop.Kind, textExpr);
+        return new NestedScalar(
+            xmlName: prop.Name,
+            pascalName: pascalName,
+            camelName: camelName,
+            csharpType: typeStr,
+            isAttribute: false,
+            lookupVarName: camelName + "El",
+            ctorExpr: ctor,
+            writerCall: writer,
+            pathSuffix: "/" + pascalName);
+    }
+
+    // ── Nested-object type emission (root and item-level call this) ──────────
+
+    /// <summary>
+    /// Emits the partial class for a nested-object body. Always sits at the
+    /// top level of the outer document class (alongside item types and wrapper
+    /// groups), so <paramref name="classIndent"/> is fixed at <c>"    "</c>;
+    /// the parameter exists for symmetry with item emission and to keep the
+    /// recursion uniform if we ever lower nested types in the future.
+    /// </summary>
+    private static void EmitNestedObjectType(StringBuilder sb, XmlGenNestedObject nested)
+    {
+        ItemTypeInfo body = nested.Body;
+        string typeName = NestedObjectTypeName(nested.XmlElementName);
+
+        var usedNames = new HashSet<string>(StringComparer.Ordinal);
+        var nestedScalars = new List<NestedScalar>();
+        foreach (XmlGenProperty prop in body.Scalars)
+        {
+            nestedScalars.Add(BuildNestedScalar(prop, usedNames));
+        }
+
+        var collectionNames = new List<string>();
+        foreach (XmlGenCollection coll in body.Collections)
+        {
+            string unique = MakeUnique(coll.CSharpPropertyName, usedNames);
+            collectionNames.Add(unique);
+        }
+
+        var nestedBindings = new List<NestedObjectBinding>();
+        foreach (XmlGenNestedObject inner in body.NestedObjects)
+        {
+            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(inner.XmlElementName), usedNames);
+            nestedBindings.Add(new NestedObjectBinding(
+                xmlElementName: inner.XmlElementName,
+                propertyName: propName,
+                fieldName: ToCamel(propName),
+                typeName: NestedObjectTypeName(inner.XmlElementName)));
+        }
+
+        sb.AppendLine();
+        sb.Append("    public sealed partial class ").AppendLine(typeName);
+        sb.AppendLine("    {");
+        sb.AppendLine("        private readonly StructuraDocumentContext _ctx;");
+        sb.AppendLine("        private readonly string _pathPrefix;");
+
+        // Span + value fields for scalars.
+        foreach (NestedScalar s in nestedScalars)
+        {
+            sb.AppendLine();
+            sb.Append("        private readonly TextSpan _").Append(s.CamelName).AppendLine("ValueSpan;");
+            sb.Append("        private ").Append(s.CSharpType).Append(" _").Append(s.CamelName).AppendLine(";");
+        }
+
+        // Backing fields for nested collections inside this nested object.
+        for (var i = 0; i < body.Collections.Count; i++)
+        {
+            sb.AppendLine();
+            EmitCollectionBackingField(sb, body.Collections[i], collectionNames[i], indent: "        ");
+        }
+
+        // Backing fields for further nested objects inside this nested object.
+        foreach (NestedObjectBinding n in nestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("        private readonly ").Append(n.TypeName).Append(" _")
+              .Append(n.FieldName).AppendLine(";");
+        }
+
+        // Constructor.
+        sb.AppendLine();
+        sb.Append("        internal ").Append(typeName)
+          .AppendLine("(StructuraDocumentContext ctx, string pathPrefix, XmlSourceElement element)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            _ctx = ctx;");
+        sb.AppendLine("            _pathPrefix = pathPrefix;");
+
+        foreach (NestedScalar s in nestedScalars)
+        {
+            EmitNestedScalarCtor(sb, s, indent: "            ");
+        }
+
+        for (var i = 0; i < body.Collections.Count; i++)
+        {
+            EmitCollectionCtor(
+                sb,
+                coll: body.Collections[i],
+                csharpPropertyName: collectionNames[i],
+                sourceElementVar: "element",
+                parentPathPrefixExpr: "_pathPrefix",
+                contextExpr: "_ctx",
+                indent: "            ");
+        }
+
+        foreach (NestedObjectBinding n in nestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("            var ").Append(n.FieldName).Append("El = element.RequireElement(\"")
+              .Append(EscapeForCsString(n.XmlElementName)).AppendLine("\");");
+            sb.Append("            _").Append(n.FieldName).Append(" = new ").Append(n.TypeName)
+              .Append("(_ctx, _pathPrefix + \"/").Append(n.PropertyName).Append("\", ")
+              .Append(n.FieldName).AppendLine("El);");
+        }
+
+        sb.AppendLine("        }");
+
+        // Public properties.
+        foreach (NestedScalar s in nestedScalars)
+        {
+            EmitNestedScalarProperty(sb, s, classIndent: "        ", bodyIndent: "            ");
+        }
+
+        for (var i = 0; i < body.Collections.Count; i++)
+        {
+            EmitCollectionProperty(sb, body.Collections[i], collectionNames[i], indent: "        ");
+        }
+
+        foreach (NestedObjectBinding n in nestedBindings)
+        {
+            sb.AppendLine();
+            sb.Append("        public ").Append(n.TypeName).Append(' ').Append(n.PropertyName)
+              .Append(" => _").Append(n.FieldName).AppendLine(";");
+        }
+
+        sb.AppendLine("    }");
+
+        // Recurse: emit further nested-object types and collection nested types.
+        foreach (XmlGenNestedObject inner in body.NestedObjects)
+        {
+            EmitNestedObjectType(sb, inner);
+        }
+
+        foreach (XmlGenCollection inner in body.Collections)
+        {
+            EmitNestedTypesForCollection(sb, inner);
+        }
+    }
+
     // ── Scalar info builders ─────────────────────────────────────────────────
 
     private static RootScalar BuildRootScalar(XmlGenProperty prop, HashSet<string> usedNames)
@@ -710,7 +1035,7 @@ internal static class XmlModelEmitter
                 kind: prop.Kind);
         }
 
-        string textExpr = $"({camelName}El.Children.Count > 0 && {camelName}El.Children[0] is XmlSourceText t_{camelName} ? t_{camelName}.Value : string.Empty)";
+        var textExpr = $"({camelName}El.Children.Count > 0 && {camelName}El.Children[0] is XmlSourceText t_{camelName} ? t_{camelName}.Value : string.Empty)";
         (string typeStr, string ctor, string writer) = ElementBindings(prop.Kind, textExpr);
         return new ItemScalar(
             xmlName: prop.Name,
@@ -794,7 +1119,7 @@ internal static class XmlModelEmitter
         {
             return baseName;
         }
-        int n = 2;
+        var n = 2;
         while (true)
         {
             string candidate = baseName + n.ToString();
@@ -812,7 +1137,7 @@ internal static class XmlModelEmitter
         {
             return pascal;
         }
-        int start = 0;
+        var start = 0;
         while (start < pascal.Length && pascal[start] == '_')
         {
             start++;
@@ -919,5 +1244,67 @@ internal static class XmlModelEmitter
         public string AbsentSafeCtorExpr { get; }
         public string WriterCall { get; }
         public XmlGenScalarKind Kind { get; }
+    }
+
+    /// <summary>
+    /// Scalar inside a nested-object body. Distinct from <see cref="ItemScalar"/>
+    /// because nested-object scalars are required (single observation, no
+    /// heterogeneous merging), so they use <c>RequireElement</c> /
+    /// <c>RequireAttribute</c> directly and skip both the IsPresent flag and
+    /// the throwing setter.
+    /// </summary>
+    private sealed class NestedScalar
+    {
+        public NestedScalar(
+            string xmlName,
+            string pascalName,
+            string camelName,
+            string csharpType,
+            bool isAttribute,
+            string lookupVarName,
+            string ctorExpr,
+            string writerCall,
+            string pathSuffix)
+        {
+            XmlName = xmlName;
+            PascalName = pascalName;
+            CamelName = camelName;
+            CSharpType = csharpType;
+            IsAttribute = isAttribute;
+            LookupVarName = lookupVarName;
+            CtorExpr = ctorExpr;
+            WriterCall = writerCall;
+            PathSuffix = pathSuffix;
+        }
+
+        public string XmlName { get; }
+        public string PascalName { get; }
+        public string CamelName { get; }
+        public string CSharpType { get; }
+        public bool IsAttribute { get; }
+        public string LookupVarName { get; }
+        public string CtorExpr { get; }
+        public string WriterCall { get; }
+        public string PathSuffix { get; } // includes leading '/'
+    }
+
+    private sealed class NestedObjectBinding
+    {
+        public NestedObjectBinding(
+            string xmlElementName,
+            string propertyName,
+            string fieldName,
+            string typeName)
+        {
+            XmlElementName = xmlElementName;
+            PropertyName = propertyName;
+            FieldName = fieldName;
+            TypeName = typeName;
+        }
+
+        public string XmlElementName { get; }
+        public string PropertyName { get; }
+        public string FieldName { get; }
+        public string TypeName { get; }
     }
 }

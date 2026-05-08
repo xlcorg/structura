@@ -88,10 +88,11 @@ public sealed class RepeatedElementsTests
     }
 
     [Fact]
-    public void Shape3_SingleOccurrence_NotACollection()
+    public void Shape3_SingleOccurrence_BecomesNestedObject()
     {
-        // A single structural element with heterogeneous children cannot be
-        // classified as a collection wrapper → it is skipped (STR0009).
+        // A single structural element with heterogeneous children is a
+        // nested object (Step 10), not a collection. The generator should
+        // emit a typed property and class, but no IReadOnlyList<Meta>.
         const string Src =
             "<order><currency>USD</currency>" +
             "<meta><key>a</key><val>b</val></meta>" +
@@ -100,7 +101,8 @@ public sealed class RepeatedElementsTests
         string source = GetGeneratedSource("order.xml", Src);
 
         source.Should().Contain("string Currency");
-        source.Should().NotContain("class Meta");
+        source.Should().Contain("MetaType Meta");
+        source.Should().Contain("class MetaType");
         source.Should().NotContain("IReadOnlyList<Meta>");
     }
 
