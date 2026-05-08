@@ -259,6 +259,42 @@ Reporter покажет паттерн глубоких XML-путей: `/Docume
 
 Раздел заполняется по ходу — фиксируем решения, не вошедшие в исходный Design (по образцу composed-petting-noodle.md §«Implementation notes»).
 
+### Step 1 — foundation (commit b87b7e4)
+
+**Сделано:**
+- `XmlGenNestedObject { XmlElementName, Body : ItemTypeInfo }` добавлен в `GeneratorXmlParser.cs`. Тело — `ItemTypeInfo` (без переименования), как было в Design §1.
+- `ItemTypeInfo` и `XmlRootInfo` получили поле `NestedObjects : List<XmlGenNestedObject>`. Конструкторы расширены позиционным параметром в конце.
+- `ClassifyElementContents` теперь возвращает 3-tuple `(scalars, collections, nestedObjects)`. Single-occurrence путь: wrapper → nested → STR0009 (как в Design §2).
+- `TryClassifyAsNestedObject`: rejects (a) элементы с non-xmlns атрибутами и (b) пустые элементы (no PureText, no Structural). Иначе рекурсивный `ClassifyElementContents` строит `ItemTypeInfo`. Имя типа nested-объекта: `IdentifierSanitizer.ToPascalCase(name) + "Type"` — это **используется только для Body.TypeName**, эмиттер на это поле в Step 1 не смотрит. Окончательное имя класса всё равно будет вычислять эмиттер в Step 2.
+- `BuildItemTypeFromCollection` мёржит `nestedObjects` from items по `XmlElementName`-ключу (первое наблюдение выигрывает) — симметрично scalars/collections. Это автоматически даёт `<author>` внутри `<book>` (acceptance criterion с библиотекой).
+- Эмиттер не изменён — поле `NestedObjects` просто игнорируется. Существующие STR0009 для pure-structural элементов исчезли (12 → 3 на наших sample'ах).
+
+**Тесты:**
+- `Generator_NestedStructural_EmitsSTR0009Warning` — переписан под residual scenario: `<nested attr="x">text</nested>` (text+attribute mixed content).
+- `Generator_NestedStructural_DeduplicatesPerParentType` — переписан на `<meta lang="...">x</meta>` за счёт того же residual.
+- `STR0009_Message_IsFormatNeutral_NoXmlAngleBrackets` — обновлён sample на residual.
+- Добавлен `Generator_PureStructuralElement_DoesNotEmitSTR0009` (positive — pure structural ≠ warning).
+- `Generator_SkipsNestedElement` в `StructuraXmlGeneratorTests` переименован в `Generator_SkipsResidualMixedContentElement` и использует `<title lang="ru">War</title>`.
+
+**Verification после foundation:**
+- `dotnet build`: foundation компилируется. Сборка `Structura.csproj` всё ещё падает на `Program.cs:50 waybill.Document.DocumentID = 5;` — это ожидаемо, починка в Step 2 main chunk.
+- `dotnet test tests/Structura.UnitTests`: 258 passed, 0 failed.
+- Warning footprint blrwbl: 9 STR0009 → 0 STR0009. Library: 7 STR0009 → 3 STR0009 (title, price, description-CDATA). Итого 16 → 3, целевая дельта ≈12 достигнута.
+
+**Открыто на Step 2 (main chunk):**
+- `XmlModelEmitter` ничего не эмитит для `info.NestedObjects` / `item.NestedObjects`. Нужно добавить:
+  - на root: backing field, ctor init, public property, recursive child-type emission.
+  - на item-type: то же самое внутри `EmitItemType`.
+  - имя типа: `NestedObjectTypeName(xmlName) = IdentifierSanitizer.ToPascalCase(xmlName) + "Type"` — helper уже не нужно делить с парсером, но логика та же.
+  - переиспользовать существующие `EmitCollectionBackingField`, `EmitCollectionCtor`, `EmitCollectionProperty`, `BuildItemScalar` / `EmitItemScalarCtor` / `EmitItemScalarProperty` — все они параметризованы достаточно (sourceElementVar / parentPathPrefixExpr / contextExpr).
+  - **NB:** для nested-объектов на root нужно использовать `BuildItemScalar` (а не `BuildRootScalar`), потому что setter должен писать `_ctx.Record(_pathPrefix + "/...", ...)`, а throwing IsPresent guard не нужен (все scalar дочерние required в nested-объекте — см. Design §4 «Важно»).
+  - Альтернатива: ввести новый `BuildNestedScalar` без IsPresent-guard'а, чтобы не путать с throwing item-scalar'ом. Проверить при имплементации, какой путь даёт меньше дублирования.
+- В Step 1 я НЕ трогал `EmitItemType`. Когда в Step 2 добавим nested-сущности внутри item-типов — поднимется `item.NestedObjects` в нескольких местах (backing fields, ctor init, properties, recursive emission). Это будет выглядеть как параллель с тем, что делает `EmitObjectMembers` в `JsonModelEmitter`, но не нужно их объединять — Coding Principles запрещают.
+- `Program.cs` уже на line 50 предполагает `waybill.Document.DocumentID = 5`. После Step 2 это должно компилироваться.
+
+**Pre-existing noise игнорируется:**
+- В рабочем дереве осталось много M-файлов (`.editorconfig`, `Directory.Build.props`, разные runtime-файлы, разные тесты). Это **не часть Step 10** — это style-нормализация, которая была в working tree до начала шага. Step 10 коммиты их не трогают.
+
 ## Risks & open questions
 
 - **Парсер уже использует `BuildItemTypeFromCollection` для построения `ItemTypeInfo` внутри коллекций.** Эта функция тоже рекурсивно классифицирует children. Если она в текущем виде НЕ умеет вкладывать nested objects (только scalars + collections), её нужно обновить симметрично. Проверить при имплементации; план по умолчанию — обновить, чтобы item-типы коллекций тоже получили вложенные объекты (например, `LineItem.SomeNested` если такое появится).
