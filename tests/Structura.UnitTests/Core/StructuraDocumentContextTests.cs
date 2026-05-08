@@ -71,6 +71,21 @@ public sealed class StructuraDocumentContextTests
     }
 
     [Fact]
+    public void Record_TwoMutationsAtSameSpanFromDifferentPaths_CollapseToSingleEntry()
+    {
+        var ctx = new StructuraDocumentContext(Source);
+        TextSpan span = SpanOf(Source, "RUB");
+
+        ctx.Record("/path/a", span, "USD");
+        ctx.Record("/path/b", span, "EUR");
+
+        ctx.Changes.Should().ContainSingle();
+        ctx.Changes[0].Path.Should().Be("/path/b");
+        ctx.Changes[0].NewText.Should().Be("EUR");
+        ctx.ApplyEdits().Should().Be("{\"currency\":\"EUR\"}");
+    }
+
+    [Fact]
     public void Changes_AreOrderedByOriginalSpan()
     {
         const string multi = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
