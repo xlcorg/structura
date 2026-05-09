@@ -45,7 +45,7 @@ public sealed class PainterFactoryTests
     [Fact]
     public void For_DocumentNameCaseInsensitive_RecognizesUppercaseExtension()
     {
-        var doc = MakeDoc("Order.Sample.JSON");
+        var doc = MakeDoc("Order.Sample.JSON", originalText: "<not-json/>");
 
         IDiffSyntaxPainter painter = PainterFactory.For(doc, syntaxOn: true);
 

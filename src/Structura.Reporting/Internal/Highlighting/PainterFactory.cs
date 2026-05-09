@@ -3,10 +3,8 @@ using Structura.Runtime;
 namespace Structura.Reporting.Internal.Highlighting;
 
 /// <summary>
-/// Resolves an <see cref="IDiffSyntaxPainter"/> for a given document.
-/// Selection: <c>DocumentName</c> file extension first; if neither
-/// <c>.json</c> nor <c>.xml</c>, sniff the first non-whitespace character
-/// of <c>OriginalText</c>; otherwise <see cref="NullPainter"/>.
+/// Resolves the syntax painter for a document. Centralizes the JSON/XML
+/// detection so the renderers stay format-agnostic.
 /// </summary>
 internal static class PainterFactory
 {
