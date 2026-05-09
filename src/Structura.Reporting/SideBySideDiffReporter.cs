@@ -107,7 +107,10 @@ public static class SideBySideDiffReporter
         try
         {
             int width = Console.WindowWidth;
-            return width > 0 ? width : 160;
+            // IDE run consoles (Rider, VS, etc.) often report a stub width
+            // like 80 that doesn't match their actual UI. Treat anything
+            // below 100 as unreliable and fall back to 160.
+            return width >= 100 ? width : 160;
         }
         catch (IOException)
         {
