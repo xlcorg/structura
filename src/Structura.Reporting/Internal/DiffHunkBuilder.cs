@@ -182,22 +182,77 @@ internal sealed class DiffHunkBuilder
                 Array.Empty<ColumnRange>()));
         }
 
-        for (int i = hunk.OldStartLine; i <= hunk.OldEndLine; i++)
+        // Walk changes in old-line order. Between consecutive changes (still
+        // inside the hunk range), emit untouched old lines once as Context.
+        // Inside a change range, emit Removed for old lines, Added for new lines.
+        int oldCursor = hunk.OldStartLine;
+        int newCursor = hunk.NewStartLine;
+        List<ChangeRange> sortedChanges = new(hunk.Changes);
+        sortedChanges.Sort((a, b) => a.OldStartLine.CompareTo(b.OldStartLine));
+
+        foreach (ChangeRange c in sortedChanges)
         {
-            string content = StripCarriageReturn(oldLines[i]);
-            IReadOnlyList<ColumnRange> highlights = inlineHighlight
-                ? CollectRemovedHighlightsForLine(i, hunk.Changes, originalText, content.Length)
-                : Array.Empty<ColumnRange>();
-            output.Add(new DiffLine(DiffLineKind.Removed, i + 1, content, highlights));
+            // Untouched lines between previous change and this one — emit as Context.
+            // In an unchanged region the old and new line indices advance together.
+            while (oldCursor < c.OldStartLine)
+            {
+                string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+                output.Add(new DiffLine(
+                    DiffLineKind.Context,
+                    newCursor + 1,
+                    contextContent,
+                    Array.Empty<ColumnRange>()));
+                oldCursor++;
+                newCursor++;
+            }
+
+            // Removed lines for this change (gutter = OLD line number).
+            // Start from oldCursor (not c.OldStartLine) to skip lines already
+            // emitted by a previous change on the same old-line range.
+            int removedStart = Math.Max(c.OldStartLine, oldCursor);
+            for (int i = removedStart; i <= c.OldEndLine; i++)
+            {
+                string content = StripCarriageReturn(oldLines[i]);
+                IReadOnlyList<ColumnRange> highlights = inlineHighlight
+                    ? CollectRemovedHighlightsForLine(i, hunk.Changes, originalText, content.Length)
+                    : Array.Empty<ColumnRange>();
+                output.Add(new DiffLine(DiffLineKind.Removed, i + 1, content, highlights));
+            }
+            if (c.OldEndLine + 1 > oldCursor)
+            {
+                oldCursor = c.OldEndLine + 1;
+            }
+
+            // Added lines for this change (gutter = NEW line number).
+            // Start from newCursor (not c.NewStartLine) to skip lines already
+            // emitted by a previous change on the same new-line range.
+            int addedStart = Math.Max(c.NewStartLine, newCursor);
+            for (int i = addedStart; i <= c.NewEndLine; i++)
+            {
+                string content = StripCarriageReturn(newLines[i]);
+                IReadOnlyList<ColumnRange> highlights = inlineHighlight
+                    ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, originalText)
+                    : Array.Empty<ColumnRange>();
+                output.Add(new DiffLine(DiffLineKind.Added, i + 1, content, highlights));
+            }
+            if (c.NewEndLine + 1 > newCursor)
+            {
+                newCursor = c.NewEndLine + 1;
+            }
         }
 
-        for (int i = hunk.NewStartLine; i <= hunk.NewEndLine; i++)
+        // Any tail of unchanged lines between the last change and hunk.OldEndLine
+        // (rare — only if hunk grouping over-extended). Emit as Context.
+        while (oldCursor <= hunk.OldEndLine)
         {
-            string content = StripCarriageReturn(newLines[i]);
-            IReadOnlyList<ColumnRange> highlights = inlineHighlight
-                ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, originalText)
-                : Array.Empty<ColumnRange>();
-            output.Add(new DiffLine(DiffLineKind.Added, i + 1, content, highlights));
+            string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+            output.Add(new DiffLine(
+                DiffLineKind.Context,
+                newCursor + 1,
+                contextContent,
+                Array.Empty<ColumnRange>()));
+            oldCursor++;
+            newCursor++;
         }
 
         int postDelta = hunk.NewEndLine - hunk.OldEndLine;

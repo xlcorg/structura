@@ -253,4 +253,47 @@ public sealed class DiffHunkBuilderTests
             l.InlineHighlights.Should().BeEmpty();
         }
     }
+
+    [Fact]
+    public void Build_TwoChangesWithUntouchedLinesBetween_EmitsContextWithinHunk()
+    {
+        // 7-line file, change line 1 ("name") and line 4 ("city") — 3 lines apart,
+        // inside the merge gap (default ContextLines=3, so gap=6).
+        // Expectation: lines 2-3 are emitted ONCE as Context, not twice as Removed+Added.
+        const string text =
+            "{\n" +
+            "  \"name\": \"Alice\",\n" +
+            "  \"x\": 1,\n" +
+            "  \"y\": 2,\n" +
+            "  \"city\": \"Paris\",\n" +
+            "  \"z\": 9\n" +
+            "}";
+        int nameOffset = text.IndexOf("\"Alice\"", System.StringComparison.Ordinal);
+        int cityOffset = text.IndexOf("\"Paris\"", System.StringComparison.Ordinal);
+        var c1 = new DocumentChange("/name", new TextSpan(nameOffset, 7), "\"Alice\"", "\"Bob\"");
+        var c2 = new DocumentChange("/city", new TextSpan(cityOffset, 7), "\"Paris\"", "\"Lyon\"");
+        string current = text[..nameOffset] + "\"Bob\"" + text[(nameOffset + 7)..cityOffset] + "\"Lyon\"" + text[(cityOffset + 7)..];
+        var doc = new FakeStructuraDocument(text, new[] { c1, c2 })
+        {
+            CurrentTextOverride = current,
+        };
+
+        var lines = new DiffHunkBuilder().Build(doc, new UnifiedDiffOptions());
+
+        // Single hunk (no separator), 2 Removed, 2 Added.
+        lines.Where(l => l.Kind == DiffLineKind.HunkSeparator).Should().BeEmpty();
+        lines.Where(l => l.Kind == DiffLineKind.Removed).Should().HaveCount(2);
+        lines.Where(l => l.Kind == DiffLineKind.Added).Should().HaveCount(2);
+
+        // Inside the hunk we have two intra-hunk Context lines for the unchanged
+        // "x" and "y" entries. Total Context lines = pre + intra + post.
+        // pre-context: line 0 "{" → 1 line.
+        // intra-context: lines 2 ("  \"x\": 1,") and 3 ("  \"y\": 2,") → 2 lines.
+        // post-context: lines 5 ("  \"z\": 9") and 6 ("}") → 2 lines.
+        lines.Where(l => l.Kind == DiffLineKind.Context).Should().HaveCount(5);
+
+        // Verify the intra-hunk context lines have correct content.
+        lines.Where(l => l.Kind == DiffLineKind.Context && l.Content.Contains("\"x\"")).Should().HaveCount(1);
+        lines.Where(l => l.Kind == DiffLineKind.Context && l.Content.Contains("\"y\"")).Should().HaveCount(1);
+    }
 }

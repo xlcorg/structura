@@ -159,7 +159,7 @@ public sealed class OrderSampleJsonReportingTests
         UnifiedDiffReporter.Print(order, sw);
 
         string output = sw.ToString();
-        output.Should().Contain("Patched order.sample.json with 20 additions and 20 removals");
+        output.Should().Contain("Patched order.sample.json with 8 additions and 8 removals");
         output.Should().Contain(" - ").And.Contain(" + ");
         // Old literals must appear on `-` rows.
         output.Should().Contain("\"RUB\"");
