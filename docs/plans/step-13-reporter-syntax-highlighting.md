@@ -282,7 +282,12 @@ Behavior changes only when `useColor && line.Kind != HunkSeparator`:
    kind changes, emit `FgDefault` + the new token's `Bright(kind)`
    (or just `FgDefault` if the new token is `Punctuation`/`Text`);
    when entering an inline-highlight range, emit `highlightBg` + `Bold`;
-   when leaving, emit `BoldOff` + `rowBg`.
+   when leaving, emit `BoldOff` + `rowBg`. **Inside an inline-highlight,
+   the token foreground is suppressed (terminal default fg).** The
+   highlight's bright BG + Bold is the change indicator; layering a
+   token color on top reduces contrast (yellow on bright red/green is
+   the worst pairing). The fg-transition logic naturally re-emits the
+   token color after the highlight closes.
 5. Final reset: `FgDefault` + `BgDefault`.
 
 For context lines (`DiffLineKind.Context`), the renderer:
@@ -395,8 +400,9 @@ New unit tests:
     expected escape sequence is `bgAdded sigilFgAdded gutter ' ' '+'
     FgDefault ' ' brightCyan content FgDefault ' ' bgDefault`.
   - Same setup with one inline-highlight range covering a sub-span of
-    the `Key` → highlight bg + bold wraps the sub-span without
-    dropping the cyan fg.
+    the `Key` → highlight bg + bold wraps the sub-span; inside the
+    highlight the token fg is suppressed (default fg) and re-emitted
+    after the highlight closes.
   - Context line with painter producing `String` over the whole content →
     expected sequence uses dim-yellow fg, no row bg.
   - With `useColor=false`, every painter is ignored — output equals
@@ -417,9 +423,11 @@ The existing color-mode unit test for side-by-side already covers
 in an interactive terminal must show:
 
 - `=== Diff (UnifiedDiffReporter) ===` for the order JSON: cyan keys,
-  yellow string values, mauve numbers, orange `true`/`false`. Inline
-  highlights still mark the changed sub-spans with bright bg + bold;
-  token fg remains visible inside.
+  yellow string values, mauve numbers, orange `true`/`false`. Inside an
+  inline-highlight, the token foreground is suppressed (terminal default
+  fg). The highlight's bright BG + Bold is the change indicator; layering
+  a token color on top reduces contrast (yellow on bright red/green is
+  the worst pairing).
 - `=== Library Diff (UnifiedDiffReporter) ===` for the XML library:
   cyan element names (including `meta:info`), sage attribute names,
   yellow attribute values, grey comments, orange entity refs.

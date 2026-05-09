@@ -32,7 +32,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         // Source has 6 lines (indices 0..5). Change on line 2 (0-based).
         // ContextLines=3: pre-context = lines 0,1 (capped at start);
@@ -76,7 +76,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = current,
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         lines.Where(l => l.Kind == DiffLineKind.HunkSeparator).Should().BeEmpty();
         lines.Where(l => l.Kind == DiffLineKind.Removed).Should().HaveCount(2);
@@ -107,7 +107,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = current,
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         lines.Where(l => l.Kind == DiffLineKind.HunkSeparator).Should().HaveCount(1);
     }
@@ -123,7 +123,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = text[..xOffset] + "2" + text[(xOffset + 1)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions { ContextLines = 3 });
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions { ContextLines = 3 });
 
         int contextBefore = 0;
         foreach (DiffLine l in lines)
@@ -144,7 +144,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions { ContextLines = 0 });
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions { ContextLines = 0 });
 
         lines.Should().HaveCount(2);
         lines[0].Kind.Should().Be(DiffLineKind.Removed);
@@ -162,7 +162,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = text[..yOffset] + "9" + text[(yOffset + 1)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions { ContextLines = 3 });
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions { ContextLines = 3 });
 
         int contextAfter = 0;
         bool seenAdded = false;
@@ -185,7 +185,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = current,
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         lines.Where(l => l.Kind == DiffLineKind.Removed).Should().HaveCount(1);
         lines.Where(l => l.Kind == DiffLineKind.Added).Should().HaveCount(2);
@@ -205,7 +205,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = current,
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         lines.Where(l => l.Kind == DiffLineKind.Removed).Should().HaveCount(1);
         lines.Where(l => l.Kind == DiffLineKind.Added).Should().HaveCount(1);
@@ -228,7 +228,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         DiffLine removed = lines.First(l => l.Kind == DiffLineKind.Removed);
         removed.InlineHighlights.Should().HaveCount(1);
@@ -251,7 +251,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions { InlineHighlight = false });
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions { InlineHighlight = false });
 
         foreach (DiffLine l in lines)
         {
@@ -283,7 +283,7 @@ public sealed class DiffHunkBuilderTests
             CurrentTextOverride = current,
         };
 
-        var lines = DiffHunkBuilder.Build(doc, new UnifiedDiffOptions());
+        var lines = DiffHunkBuilder.Build(doc, new DiffReporterOptions());
 
         // Single hunk (no separator), 2 Removed, 2 Added.
         lines.Where(l => l.Kind == DiffLineKind.HunkSeparator).Should().BeEmpty();

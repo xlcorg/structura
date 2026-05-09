@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Structura.Reporting;
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 using Xunit;
@@ -25,7 +26,7 @@ public sealed class SideBySideDiffReporterColorTests
         };
     }
 
-    private static string RenderColored(SideBySideDiffOptions options, int totalWidth = 120)
+    private static string RenderColored(DiffReporterOptions options, int totalWidth = 120)
     {
         var doc = MakeDoc();
         var sw = new System.IO.StringWriter();
@@ -36,7 +37,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_RemovedCellHasRowBg()
     {
-        string output = RenderColored(new SideBySideDiffOptions());
+        string output = RenderColored(new DiffReporterOptions());
 
         output.Should().Contain(AnsiPalette.BgRemovedRow);
         output.Should().Contain(AnsiPalette.BgAddedRow);
@@ -45,7 +46,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_InlineHighlightOn_HasHighlightEscape()
     {
-        string output = RenderColored(new SideBySideDiffOptions { InlineHighlight = true });
+        string output = RenderColored(new DiffReporterOptions { InlineHighlight = true });
 
         output.Should().Contain(AnsiPalette.BgRemovedHi);
         output.Should().Contain(AnsiPalette.BgAddedHi);
@@ -54,7 +55,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_InlineHighlightOff_NoHighlightEscape()
     {
-        string output = RenderColored(new SideBySideDiffOptions { InlineHighlight = false });
+        string output = RenderColored(new DiffReporterOptions { InlineHighlight = false });
 
         output.Should().NotContain(AnsiPalette.BgRemovedHi);
         output.Should().NotContain(AnsiPalette.BgAddedHi);
@@ -63,7 +64,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_SeparatorIsDimmed()
     {
-        string output = RenderColored(new SideBySideDiffOptions());
+        string output = RenderColored(new DiffReporterOptions());
 
         string sep = $" {AnsiPalette.Dim}│{AnsiPalette.DimOff} ";
         output.Should().Contain(sep);
@@ -72,7 +73,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_RowBgFillsToColumnEdge()
     {
-        string output = RenderColored(new SideBySideDiffOptions());
+        string output = RenderColored(new DiffReporterOptions());
 
         // Find a Removed cell. It begins with BgRemovedRow and ends with BgDefault.
         // Between the visible content (which contains "30") and BgDefault, there
@@ -119,10 +120,30 @@ public sealed class SideBySideDiffReporterColorTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.RenderTo(doc, sw, new SideBySideDiffOptions(), totalWidth: 120, useColor: true, useUnicode: true);
+        SideBySideDiffReporter.RenderTo(doc, sw, new DiffReporterOptions(), totalWidth: 120, useColor: true, useUnicode: true);
 
         string output = sw.ToString();
         string sepWrapped = AnsiPalette.Dim + "…" + AnsiPalette.DimOff;
         output.Should().Contain(sepWrapped);
+    }
+
+    [Fact]
+    public void Print_ColorEnabled_SyntaxOn_AddedCellEmbedsKeyFg()
+    {
+        string output = RenderColored(new DiffReporterOptions { SyntaxHighlight = true });
+
+        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Key));
+        // Number fg is suppressed inside the inline-highlight (the changed "30"/"42" span);
+        // bright bg + bold is the change indicator there.
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
+    }
+
+    [Fact]
+    public void Print_ColorEnabled_SyntaxOff_NoTokenFg()
+    {
+        string output = RenderColored(new DiffReporterOptions { SyntaxHighlight = false });
+
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Key));
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
     }
 }

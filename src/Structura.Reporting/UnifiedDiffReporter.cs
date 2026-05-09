@@ -1,4 +1,5 @@
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
@@ -12,14 +13,14 @@ namespace Structura.Reporting;
 /// </summary>
 public static class UnifiedDiffReporter
 {
-    private static readonly UnifiedDiffOptions DefaultOptions = new();
+    private static readonly DiffReporterOptions DefaultOptions = new();
 
     public static void Print(IStructuraDocument document)
     {
         Print(document, DefaultOptions);
     }
 
-    public static void Print(IStructuraDocument document, UnifiedDiffOptions options)
+    public static void Print(IStructuraDocument document, DiffReporterOptions options)
     {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
@@ -31,15 +32,15 @@ public static class UnifiedDiffReporter
         RenderTo(document, writer, DefaultOptions, useColor: false, useUnicode: true);
     }
 
-    public static void Print(IStructuraDocument document, TextWriter writer, UnifiedDiffOptions options)
+    public static void Print(IStructuraDocument document, TextWriter writer, DiffReporterOptions options)
     {
         RenderTo(document, writer, options, useColor: false, useUnicode: true);
     }
 
-    private static void RenderTo(
+    internal static void RenderTo(
         IStructuraDocument document,
         TextWriter writer,
-        UnifiedDiffOptions options,
+        DiffReporterOptions options,
         bool useColor,
         bool useUnicode)
     {
@@ -58,12 +59,16 @@ public static class UnifiedDiffReporter
         DiffStats stats = DiffStats.Compute(lines);
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
+        IDiffSyntaxPainter painter = useColor
+            ? PainterFactory.For(document, options.SyntaxHighlight)
+            : NullPainter.Instance;
+
         DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
         writer.WriteLine();
 
         foreach (DiffLine line in lines)
         {
-            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode);
+            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode, painter);
             writer.WriteLine(rendered);
         }
     }

@@ -1,5 +1,7 @@
 using System.Text;
 
+using Structura.Reporting.Internal.Highlighting;
+
 namespace Structura.Reporting.Internal;
 
 /// <summary>
@@ -18,10 +20,11 @@ internal static class SideBySideRowRenderer
         int gutterWidth,
         int contentWidth,
         bool useColor,
-        bool useUnicode)
+        bool useUnicode,
+        IDiffSyntaxPainter painter)
     {
-        string leftCell = RenderCell(row.Left, gutterWidth, contentWidth, isLeftSide: true, useColor, useUnicode);
-        string rightCell = RenderCell(row.Right, gutterWidth, contentWidth, isLeftSide: false, useColor, useUnicode);
+        string leftCell = RenderCell(row.Left, gutterWidth, contentWidth, isLeftSide: true, useColor, useUnicode, painter);
+        string rightCell = RenderCell(row.Right, gutterWidth, contentWidth, isLeftSide: false, useColor, useUnicode, painter);
         string separator = RenderSeparator(useColor, useUnicode);
         return leftCell + separator + rightCell;
     }
@@ -42,7 +45,8 @@ internal static class SideBySideRowRenderer
         int contentWidth,
         bool isLeftSide,
         bool useColor,
-        bool useUnicode)
+        bool useUnicode,
+        IDiffSyntaxPainter painter)
     {
         int cellWidth = gutterWidth + 3 + contentWidth;
         if (maybeLine is null)
@@ -66,13 +70,38 @@ internal static class SideBySideRowRenderer
         };
 
         var truncation = TruncateContent(line.Content, contentWidth, useUnicode);
+        IReadOnlyList<TokenRange> rawTokens = useColor
+            ? painter.TokenizeLine(line.Content)
+            : Array.Empty<TokenRange>();
+        IReadOnlyList<TokenRange> clippedTokens = ClipTokens(rawTokens, truncation.VisibleContentLength);
 
         if (line.Kind == DiffLineKind.Context)
         {
-            return RenderContextCell(gutter, sigil, truncation, useColor);
+            return RenderContextCell(gutter, sigil, truncation, useColor, clippedTokens);
         }
+        return RenderChangedCell(line, gutter, sigil, truncation, useColor, clippedTokens);
+    }
 
-        return RenderChangedCell(line, gutter, sigil, truncation, useColor);
+    private static IReadOnlyList<TokenRange> ClipTokens(IReadOnlyList<TokenRange> tokens, int visibleEnd)
+    {
+        if (tokens.Count == 0 || visibleEnd <= 0)
+        {
+            return Array.Empty<TokenRange>();
+        }
+        var clipped = new List<TokenRange>(tokens.Count);
+        foreach (TokenRange t in tokens)
+        {
+            var clippedStart = Math.Min(t.Range.Start, visibleEnd);
+            var clippedEnd = Math.Min(t.Range.End, visibleEnd);
+            var len = clippedEnd - clippedStart;
+            if (len > 0)
+            {
+                var clippedRange = new ColumnRange(clippedStart, len);
+                var clippedToken = new TokenRange(clippedRange, t.Kind);
+                clipped.Add(clippedToken);
+            }
+        }
+        return clipped;
     }
 
     private static TruncatedContent TruncateContent(string content, int contentWidth, bool useUnicode)
@@ -92,7 +121,7 @@ internal static class SideBySideRowRenderer
         return new TruncatedContent(visible, visibleLen, string.Empty);
     }
 
-    private static string RenderContextCell(string gutter, char sigil, TruncatedContent t, bool useColor)
+    private static string RenderContextCell(string gutter, char sigil, TruncatedContent t, bool useColor, IReadOnlyList<TokenRange> clippedTokens)
     {
         if (!useColor)
         {
@@ -100,7 +129,10 @@ internal static class SideBySideRowRenderer
         }
         var sb = new StringBuilder();
         sb.Append(AnsiPalette.Dim).Append(gutter).Append(' ').Append(sigil).Append(AnsiPalette.DimOff);
-        sb.Append(' ').Append(t.Visible).Append(t.Padding);
+        sb.Append(' ');
+        var noHighlights = Array.Empty<ColumnRange>();
+        AppendCellContent(sb, t, clippedTokens, noHighlights, rowBg: string.Empty, highlightBg: string.Empty, useDimPalette: true);
+        sb.Append(t.Padding);
         return sb.ToString();
     }
 
@@ -109,7 +141,8 @@ internal static class SideBySideRowRenderer
         string gutter,
         char sigil,
         TruncatedContent t,
-        bool useColor)
+        bool useColor,
+        IReadOnlyList<TokenRange> clippedTokens)
     {
         if (!useColor)
         {
@@ -123,61 +156,85 @@ internal static class SideBySideRowRenderer
         var sb = new StringBuilder();
         sb.Append(rowBg);
         sb.Append(sigilFg).Append(gutter).Append(' ').Append(sigil).Append(AnsiPalette.FgDefault).Append(' ');
-        AppendVisibleContentWithHighlights(sb, t, line.InlineHighlights, rowBg, highlightBg);
+        AppendCellContent(sb, t, clippedTokens, line.InlineHighlights, rowBg, highlightBg, useDimPalette: false);
         sb.Append(t.Padding);
         sb.Append(AnsiPalette.BgDefault);
         return sb.ToString();
     }
 
-    private static void AppendVisibleContentWithHighlights(
+    private static void AppendCellContent(
         StringBuilder sb,
         TruncatedContent t,
+        IReadOnlyList<TokenRange> tokens,
         IReadOnlyList<ColumnRange> highlights,
         string rowBg,
-        string highlightBg)
+        string highlightBg,
+        bool useDimPalette)
     {
-        // The truncation indicator (… / >) is part of t.Visible but lives at
-        // index t.VisibleContentLength (when truncated). Highlights apply only
-        // to indices [0, t.VisibleContentLength); ranges past that are dropped,
-        // ranges crossing it are clipped.
-        int visibleEnd = t.VisibleContentLength;
-        var clippedRanges = new List<ColumnRange>(highlights.Count);
-        foreach (ColumnRange r in highlights)
+        var activeTokenKind = TokenKind.Punctuation;
+        var activeFg = string.Empty;
+        var inHighlight = false;
+        var tokenIndex = 0;
+        var highlightIndex = 0;
+
+        for (var col = 0; col < t.Visible.Length; col++)
         {
-            int clippedStart = Math.Min(r.Start, visibleEnd);
-            int clippedEndExclusive = Math.Min(r.End, visibleEnd);
-            int clippedLen = clippedEndExclusive - clippedStart;
-            if (clippedLen > 0)
+            var insideContent = col < t.VisibleContentLength;
+
+            while (insideContent && tokenIndex < tokens.Count && tokens[tokenIndex].Range.End <= col)
             {
-                clippedRanges.Add(new ColumnRange(clippedStart, clippedLen));
+                tokenIndex++;
             }
+            var kindAtCol = insideContent && tokenIndex < tokens.Count && tokens[tokenIndex].Range.Start <= col
+                ? tokens[tokenIndex].Kind
+                : TokenKind.Punctuation;
+            var fgAtCol = !insideContent
+                ? string.Empty
+                : (useDimPalette ? SyntaxPalette.Dim(kindAtCol) : SyntaxPalette.Bright(kindAtCol));
+
+            while (insideContent && highlightIndex < highlights.Count && highlights[highlightIndex].End <= col)
+            {
+                highlightIndex++;
+            }
+            var inHighlightAtCol = insideContent && highlightIndex < highlights.Count && highlights[highlightIndex].Start <= col;
+
+            if (inHighlightAtCol)
+            {
+                fgAtCol = string.Empty;
+            }
+
+            if (col == 0 || kindAtCol != activeTokenKind || fgAtCol != activeFg)
+            {
+                sb.Append(fgAtCol.Length > 0 ? fgAtCol : AnsiPalette.FgDefault);
+                activeTokenKind = kindAtCol;
+                activeFg = fgAtCol;
+            }
+
+            if (inHighlightAtCol != inHighlight)
+            {
+                if (inHighlightAtCol)
+                {
+                    sb.Append(highlightBg).Append(AnsiPalette.Bold);
+                }
+                else
+                {
+                    sb.Append(AnsiPalette.BoldOff).Append(rowBg.Length > 0 ? rowBg : AnsiPalette.BgDefault);
+                }
+                inHighlight = inHighlightAtCol;
+            }
+
+            sb.Append(t.Visible[col]);
         }
 
-        if (clippedRanges.Count == 0)
+        if (inHighlight)
         {
-            sb.Append(t.Visible);
-            return;
-        }
-
-        int cursor = 0;
-        foreach (ColumnRange r in clippedRanges)
-        {
-            if (r.Start > cursor)
-            {
-                int leadLen = r.Start - cursor;
-                sb.Append(t.Visible, cursor, leadLen);
-            }
-            sb.Append(highlightBg).Append(AnsiPalette.Bold);
-            sb.Append(t.Visible, r.Start, r.Length);
             sb.Append(AnsiPalette.BoldOff);
-            sb.Append(rowBg);
-            cursor = r.End;
+            if (rowBg.Length > 0)
+            {
+                sb.Append(rowBg);
+            }
         }
-        if (cursor < t.Visible.Length)
-        {
-            int tailLen = t.Visible.Length - cursor;
-            sb.Append(t.Visible, cursor, tailLen);
-        }
+        sb.Append(AnsiPalette.FgDefault);
     }
 
     private static string RenderHunkSeparatorCell(int cellWidth, bool useColor, bool useUnicode)
