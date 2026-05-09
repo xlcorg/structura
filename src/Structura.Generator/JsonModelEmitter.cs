@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using Microsoft.CodeAnalysis.CSharp;
+
 namespace Structura.Generator;
 
 /// <summary>
@@ -15,7 +17,7 @@ namespace Structura.Generator;
 /// </summary>
 internal static class JsonModelEmitter
 {
-    public static string Emit(string className, JsonRootInfo info)
+    public static string Emit(string className, string sourceFileName, JsonRootInfo info)
     {
         var sb = new StringBuilder(8192);
 
@@ -35,6 +37,14 @@ internal static class JsonModelEmitter
         sb.Append("    : IStructuraJsonDocument<").Append(className).AppendLine(">, IStructuraDocument");
         sb.AppendLine("{");
         sb.AppendLine("    private readonly StructuraDocumentContext _ctx;");
+        sb.AppendLine();
+
+        // ── Static SourceFileName (interface contract) ────────────────────────
+        string sourceFileNameLiteral = SymbolDisplay.FormatLiteral(sourceFileName, quote: true);
+        sb.Append("    public static string SourceFileName => ")
+          .Append(sourceFileNameLiteral)
+          .AppendLine(";");
+        sb.AppendLine();
 
         EmitObjectMembers(
             sb,
@@ -62,8 +72,9 @@ internal static class JsonModelEmitter
         sb.AppendLine();
         sb.AppendLine("    public string ToJson() => _ctx.ApplyEdits();");
         sb.AppendLine();
-        sb.AppendLine("    string IStructuraDocument.OriginalText => _ctx.OriginalText;");
-        sb.AppendLine("    string IStructuraDocument.CurrentText  => _ctx.ApplyEdits();");
+        sb.AppendLine("    string IStructuraDocument.OriginalText  => _ctx.OriginalText;");
+        sb.AppendLine("    string IStructuraDocument.CurrentText   => _ctx.ApplyEdits();");
+        sb.AppendLine("    string IStructuraDocument.DocumentName  => _ctx.DocumentName;");
         sb.AppendLine("    IReadOnlyList<DocumentChange> IStructuraDocument.Changes => _ctx.Changes;");
 
         // ── Nested types (depth-first) ───────────────────────────────────────
@@ -227,7 +238,7 @@ internal static class JsonModelEmitter
         {
             sb.Append(classIndent).Append("private ").Append(className).AppendLine("(string source, JsonSourceObject root)");
             sb.Append(classIndent).AppendLine("{");
-            sb.Append(ctorIndent).AppendLine("_ctx = new StructuraDocumentContext(source);");
+            sb.Append(ctorIndent).AppendLine("_ctx = new StructuraDocumentContext(source, SourceFileName);");
         }
         else
         {

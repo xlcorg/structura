@@ -10,13 +10,17 @@ public sealed class StructuraDocumentContext
 {
     private readonly Dictionary<TextSpan, RecordedEdit> _edits = new();
 
-    public StructuraDocumentContext(string originalText)
+    public StructuraDocumentContext(string originalText, string documentName)
     {
         ArgumentNullException.ThrowIfNull(originalText);
+        ArgumentNullException.ThrowIfNull(documentName);
         OriginalText = originalText;
+        DocumentName = documentName;
     }
 
     public string OriginalText { get; }
+
+    public string DocumentName { get; }
 
     public bool HasChanges => _edits.Count > 0;
 

@@ -9,15 +9,23 @@ namespace Structura.UnitTests.Reporting;
 /// </summary>
 internal sealed class FakeStructuraDocument : IStructuraDocument
 {
-    public FakeStructuraDocument(string originalText, IReadOnlyList<DocumentChange> changes)
+    public FakeStructuraDocument(
+        string originalText,
+        IReadOnlyList<DocumentChange> changes,
+        string documentName = "fake.json")
     {
         OriginalText = originalText;
         Changes = changes;
+        DocumentName = documentName;
     }
 
     public string OriginalText { get; }
 
-    public string CurrentText => OriginalText; // reporters do not read this
+    public string? CurrentTextOverride { get; init; }
+
+    public string CurrentText => CurrentTextOverride ?? OriginalText;
+
+    public string DocumentName { get; }
 
     public IReadOnlyList<DocumentChange> Changes { get; }
 }

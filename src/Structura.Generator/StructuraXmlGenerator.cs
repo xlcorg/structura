@@ -96,7 +96,7 @@ public sealed class StructuraXmlGenerator : IIncrementalGenerator
                 }
             }
 
-            string code = XmlModelEmitter.Emit(model.className, model.info);
+            string code = XmlModelEmitter.Emit(model.className, fileName, model.info);
             spc.AddSource(
                 $"{model.className}.g.cs",
                 SourceText.From(code, Encoding.UTF8));
