@@ -8,9 +8,9 @@ namespace Structura.Reporting.Internal;
 /// ranges fall within <c>2 * ContextLines</c> of each other into a single
 /// hunk, separated by <see cref="DiffLineKind.HunkSeparator"/>.
 /// </summary>
-internal sealed class DiffHunkBuilder
+internal static class DiffHunkBuilder
 {
-    public IReadOnlyList<DiffLine> Build(IStructuraDocument document, UnifiedDiffOptions options)
+    public static IReadOnlyList<DiffLine> Build(IStructuraDocument document, UnifiedDiffOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
@@ -29,7 +29,7 @@ internal sealed class DiffHunkBuilder
         if (options.ShowFullFile)
         {
             var fullOutput = new List<DiffLine>();
-            HunkRange fullHunk = MakeFullFileHunk(ranges, oldLines.Length);
+            HunkRange fullHunk = MakeFullFileHunk(ranges);
             int contextNeeded = ComputeFullFileContextLines(ranges, oldLines.Length);
             EmitHunk(fullOutput, fullHunk, oldLines, newLines, contextNeeded, document.OriginalText, options.InlineHighlight);
             return fullOutput;
@@ -379,7 +379,7 @@ internal sealed class DiffHunkBuilder
         return text.Length;
     }
 
-    private static HunkRange MakeFullFileHunk(List<ChangeRange> ranges, int oldLineCount)
+    private static HunkRange MakeFullFileHunk(List<ChangeRange> ranges)
     {
         int oldStart = ranges[0].OldStartLine;
         int oldEnd = ranges[^1].OldEndLine;

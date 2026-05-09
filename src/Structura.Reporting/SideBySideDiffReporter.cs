@@ -56,14 +56,13 @@ public static class SideBySideDiffReporter
             return;
         }
 
-        var hunkBuilder = new DiffHunkBuilder();
         UnifiedDiffOptions hunkOptions = new()
         {
             ContextLines = options.ContextLines,
             InlineHighlight = options.InlineHighlight,
             ShowFullFile = options.ShowFullFile,
         };
-        IReadOnlyList<DiffLine> lines = hunkBuilder.Build(document, hunkOptions);
+        IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, hunkOptions);
 
         int additions = 0;
         int removals = 0;

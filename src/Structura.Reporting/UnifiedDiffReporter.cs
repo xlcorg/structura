@@ -54,8 +54,7 @@ public static class UnifiedDiffReporter
             return;
         }
 
-        var builder = new DiffHunkBuilder();
-        IReadOnlyList<DiffLine> lines = builder.Build(document, options);
+        IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, options);
 
         int additions = 0;
         int removals = 0;

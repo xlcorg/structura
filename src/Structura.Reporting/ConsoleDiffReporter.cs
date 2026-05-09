@@ -59,7 +59,7 @@ public static class ConsoleDiffReporter
 
     private static void WriteColoredLine(TextWriter writer, bool useColor, ConsoleColor color, string line)
     {
-        if (!useColor || writer != Console.Out)
+        if (!useColor)
         {
             writer.WriteLine(line);
             return;
