@@ -30,12 +30,8 @@ Console.WriteLine("=== Modified JSON ===");
 Console.WriteLine(modifiedJson);
 Console.WriteLine();
 
-Console.WriteLine("=== Changes (SimpleReporter) ===");
-SimpleReporter.Print(order);
-Console.WriteLine();
-
-Console.WriteLine("=== Diff (ConsoleDiffReporter) ===");
-ConsoleDiffReporter.Print(order);
+Console.WriteLine("=== Diff (UnifiedDiffReporter) ===");
+UnifiedDiffReporter.Print(order);
 Console.WriteLine();
 
 // ── XML pipeline ──────────────────────────────────────────────────────────────
@@ -67,12 +63,8 @@ Console.WriteLine("=== Modified BLRWBL XML ===");
 Console.WriteLine(modifiedBlrwbl);
 Console.WriteLine();
 
-Console.WriteLine("=== BLRWBL Changes (SimpleReporter) ===");
-SimpleReporter.Print(waybill);
-Console.WriteLine();
-
-Console.WriteLine("=== BLRWBL Diff (ConsoleDiffReporter) ===");
-ConsoleDiffReporter.Print(waybill);
+Console.WriteLine("=== BLRWBL Diff (UnifiedDiffReporter) ===");
+UnifiedDiffReporter.Print(waybill);
 Console.WriteLine();
 
 // ── Library pipeline (heterogeneous-item torture sample) ─────────────────────
@@ -91,12 +83,8 @@ Console.WriteLine("=== Modified Library XML ===");
 Console.WriteLine(modifiedLibrary);
 Console.WriteLine();
 
-Console.WriteLine("=== Library Changes (SimpleReporter) ===");
-SimpleReporter.Print(library);
-Console.WriteLine();
-
-Console.WriteLine("=== Library Diff (ConsoleDiffReporter) ===");
-ConsoleDiffReporter.Print(library);
+Console.WriteLine("=== Library Diff (UnifiedDiffReporter) ===");
+UnifiedDiffReporter.Print(library);
 Console.WriteLine();
 
 // ── Library JSON pipeline (heterogeneous-item torture sample, JSON side) ─────
@@ -132,9 +120,5 @@ Console.WriteLine("=== Modified Library JSON ===");
 Console.WriteLine(modifiedLibraryJson);
 Console.WriteLine();
 
-Console.WriteLine("=== Library JSON Changes (SimpleReporter) ===");
-SimpleReporter.Print(libraryDoc);
-Console.WriteLine();
-
-Console.WriteLine("=== Library JSON Diff (ConsoleDiffReporter) ===");
-ConsoleDiffReporter.Print(libraryDoc);
+Console.WriteLine("=== Library JSON Diff (UnifiedDiffReporter) ===");
+UnifiedDiffReporter.Print(libraryDoc);
