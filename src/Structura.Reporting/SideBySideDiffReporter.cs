@@ -52,6 +52,7 @@ public static class SideBySideDiffReporter
         {
             ContextLines = options.ContextLines,
             InlineHighlight = options.InlineHighlight,
+            ShowFullFile = options.ShowFullFile,
         };
         IReadOnlyList<DiffLine> lines = hunkBuilder.Build(document, hunkOptions);
 

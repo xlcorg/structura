@@ -25,6 +25,16 @@ internal sealed class DiffHunkBuilder
         string[] newLines = SplitLines(document.CurrentText);
 
         List<ChangeRange> ranges = MapChangesToLineRanges(document.OriginalText, changes);
+
+        if (options.ShowFullFile)
+        {
+            var fullOutput = new List<DiffLine>();
+            HunkRange fullHunk = MakeFullFileHunk(ranges, oldLines.Length);
+            int contextNeeded = ComputeFullFileContextLines(ranges, oldLines.Length);
+            EmitHunk(fullOutput, fullHunk, oldLines, newLines, contextNeeded, document.OriginalText, options.InlineHighlight);
+            return fullOutput;
+        }
+
         List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines);
 
         var output = new List<DiffLine>();
@@ -367,5 +377,21 @@ internal sealed class DiffHunkBuilder
             }
         }
         return text.Length;
+    }
+
+    private static HunkRange MakeFullFileHunk(List<ChangeRange> ranges, int oldLineCount)
+    {
+        int oldStart = ranges[0].OldStartLine;
+        int oldEnd = ranges[^1].OldEndLine;
+        int newStart = ranges[0].NewStartLine;
+        int newEnd = ranges[^1].NewEndLine;
+        return new HunkRange(oldStart, oldEnd, newStart, newEnd, ranges);
+    }
+
+    private static int ComputeFullFileContextLines(List<ChangeRange> ranges, int oldLineCount)
+    {
+        int beforeContext = ranges[0].OldStartLine;
+        int afterContext = (oldLineCount - 1) - ranges[^1].OldEndLine;
+        return Math.Max(beforeContext, afterContext);
     }
 }

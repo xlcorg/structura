@@ -2,7 +2,7 @@ namespace Structura.Reporting.Internal;
 
 /// <summary>
 /// Two-line banner emitted at the top of unified and side-by-side diff output:
-/// <c>● Patched(name)</c> followed by <c>  └ Patched name with N additions and M removals</c>.
+/// <c>● Patched</c> followed by <c>  └ Patched name with N additions and M removals</c>.
 /// Wording matches the existing reporter contract — do not paraphrase.
 /// </summary>
 internal static class DiffBanner
@@ -29,9 +29,7 @@ internal static class DiffBanner
             writer.Write(AnsiPalette.Bold);
             writer.Write("Patched");
             writer.Write(AnsiPalette.BoldOff);
-            writer.Write('(');
-            writer.Write(documentName);
-            writer.WriteLine(')');
+            writer.WriteLine();
 
             writer.Write("  ");
             writer.Write(AnsiPalette.Dim);
@@ -62,9 +60,7 @@ internal static class DiffBanner
         {
             writer.Write(dot);
             writer.Write(' ');
-            writer.Write("Patched(");
-            writer.Write(documentName);
-            writer.WriteLine(')');
+            writer.WriteLine("Patched");
 
             writer.Write("  ");
             writer.Write(corner);

@@ -15,4 +15,11 @@ public sealed record SideBySideDiffOptions
     /// and otherwise falls back to <c>160</c>.
     /// </summary>
     public int? TotalWidth { get; init; } = null;
+
+    /// <summary>
+    /// When <c>true</c>, render every line of the document (no hunk grouping, no
+    /// <see cref="ContextLines"/> truncation, no <c>…</c> separator). Useful when
+    /// the reader wants to see the full file with changes inline. Default <c>false</c>.
+    /// </summary>
+    public bool ShowFullFile { get; init; } = false;
 }

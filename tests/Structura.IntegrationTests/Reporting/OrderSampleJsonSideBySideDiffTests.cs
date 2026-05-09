@@ -34,7 +34,6 @@ public sealed class OrderSampleJsonSideBySideDiffTests
         SideBySideDiffReporter.Print(order, sw, new SideBySideDiffOptions { TotalWidth = 200 });
 
         string output = sw.ToString();
-        output.Should().Contain("Patched(order.sample.json)");
         output.Should().Contain("Patched order.sample.json with");
     }
 
