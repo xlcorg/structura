@@ -1,6 +1,7 @@
 using FluentAssertions;
 
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 
 using Xunit;
 
@@ -13,7 +14,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.Context, 7, 7, "  \"x\": 1,", System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true, NullPainter.Instance);
 
         s.Should().Be("  7     \"x\": 1,");
     }
@@ -23,7 +24,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.Removed, 7, 0, "  \"x\": 1,", System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true, NullPainter.Instance);
 
         s.Should().Be("  7 -   \"x\": 1,");
     }
@@ -33,7 +34,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.Added, 0, 7, "  \"x\": 2,", System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true, NullPainter.Instance);
 
         s.Should().Be("  7 +   \"x\": 2,");
     }
@@ -43,7 +44,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.HunkSeparator, 0, 0, string.Empty, System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true, NullPainter.Instance);
 
         s.Should().Be("      …");  // 3 (gutter) + 3 (sep+sigil+sep) = 6 chars then …
     }
@@ -53,7 +54,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.HunkSeparator, 0, 0, string.Empty, System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: false);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: false, NullPainter.Instance);
 
         s.Should().Be("      ...");
     }
@@ -63,7 +64,7 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.Removed, 7, 0, "  \"x\": 1,", System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, NullPainter.Instance);
 
         s.Should().StartWith(AnsiPalette.BgRemovedRow);
         s.Should().EndWith(AnsiPalette.BgDefault);
@@ -79,7 +80,7 @@ public sealed class DiffLineRendererTests
         var ranges = new[] { new ColumnRange(7, 1) };
         var line = new DiffLine(DiffLineKind.Added, 0, 7, "  \"x\": 1,", ranges);
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, NullPainter.Instance);
 
         s.Should().Contain(AnsiPalette.BgAddedHi);
         s.Should().Contain(AnsiPalette.BgAddedRow);
@@ -90,13 +91,12 @@ public sealed class DiffLineRendererTests
     {
         var line = new DiffLine(DiffLineKind.Context, 7, 7, "  \"x\": 1,", System.Array.Empty<ColumnRange>());
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, NullPainter.Instance);
 
         s.Should().StartWith(AnsiPalette.Dim);
         s.Should().Contain(AnsiPalette.DimOff);
-        int dimOffIdx = s.IndexOf(AnsiPalette.DimOff, System.StringComparison.Ordinal);
-        string afterDim = s[(dimOffIdx + AnsiPalette.DimOff.Length)..];
-        afterDim.Should().Be("  \"x\": 1,");
+        s.Should().Contain("  \"x\": 1,");
+        s.Should().EndWith(AnsiPalette.FgDefault);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class DiffLineRendererTests
         var ranges = new[] { new ColumnRange(7, 1) };
         var line = new DiffLine(DiffLineKind.Added, 0, 7, "  \"x\": 1,", ranges);
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, NullPainter.Instance);
 
         int hiIdx = s.IndexOf(AnsiPalette.BgAddedHi, System.StringComparison.Ordinal);
         int boldIdx = s.IndexOf(AnsiPalette.Bold, System.StringComparison.Ordinal);
@@ -124,7 +124,7 @@ public sealed class DiffLineRendererTests
         };
         var line = new DiffLine(DiffLineKind.Added, 0, 1, "ab cd ef", ranges);
 
-        string s = DiffLineRenderer.Render(line, gutterWidth: 1, useColor: true, useUnicode: true);
+        string s = DiffLineRenderer.Render(line, gutterWidth: 1, useColor: true, useUnicode: true, NullPainter.Instance);
 
         // Both highlight regions present; row bg toggled around them.
         int firstHi = s.IndexOf(AnsiPalette.BgAddedHi, System.StringComparison.Ordinal);
@@ -134,5 +134,75 @@ public sealed class DiffLineRendererTests
 
         // Plain content "cd" appears between the two highlight regions.
         s.Should().Contain("cd");
+    }
+
+    private sealed class StubPainter : IDiffSyntaxPainter
+    {
+        private readonly TokenRange[] _tokens;
+        public StubPainter(params TokenRange[] tokens) => _tokens = tokens;
+        public IReadOnlyList<TokenRange> TokenizeLine(string content) => _tokens;
+    }
+
+    [Fact]
+    public void Render_AddedLine_WithKeyToken_EmbedsBrightCyanFg()
+    {
+        const string content = "  \"x\": 1,";
+        var keyRange = new ColumnRange(0, content.Length);
+        var keyToken = new TokenRange(keyRange, TokenKind.Key);
+        var painter = new StubPainter(keyToken);
+        var line = new DiffLine(DiffLineKind.Added, 0, 7, content, System.Array.Empty<ColumnRange>());
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, painter);
+
+        s.Should().StartWith(AnsiPalette.BgAddedRow);
+        s.Should().EndWith(AnsiPalette.BgDefault);
+        s.Should().Contain(SyntaxPalette.Bright(TokenKind.Key));
+        s.Should().Contain(content);
+    }
+
+    [Fact]
+    public void Render_AddedLine_NoColor_PainterIgnored()
+    {
+        const string content = "  \"x\": 1,";
+        var keyRange = new ColumnRange(0, content.Length);
+        var keyToken = new TokenRange(keyRange, TokenKind.Key);
+        var painter = new StubPainter(keyToken);
+        var line = new DiffLine(DiffLineKind.Added, 0, 7, content, System.Array.Empty<ColumnRange>());
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: false, useUnicode: true, painter);
+
+        s.Should().Be("  7 +   \"x\": 1,");
+        s.Should().NotContain("\x1b");
+    }
+
+    [Fact]
+    public void Render_ContextLine_WithStringToken_UsesDimYellowFg()
+    {
+        const string content = "  \"x\": \"abc\",";
+        var stringRange = new ColumnRange(7, 5);
+        var stringToken = new TokenRange(stringRange, TokenKind.String);
+        var painter = new StubPainter(stringToken);
+        var line = new DiffLine(DiffLineKind.Context, 7, 7, content, System.Array.Empty<ColumnRange>());
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, painter);
+
+        s.Should().Contain(SyntaxPalette.Dim(TokenKind.String));
+        s.Should().NotContain(SyntaxPalette.Bright(TokenKind.String));
+    }
+
+    [Fact]
+    public void Render_AddedLine_TokenInsideInlineHighlight_KeepsBothFgAndHighlightBg()
+    {
+        const string content = "  \"x\": 1,";
+        var hi = new[] { new ColumnRange(7, 1) };
+        var numberRange = new ColumnRange(7, 1);
+        var numberToken = new TokenRange(numberRange, TokenKind.Number);
+        var painter = new StubPainter(numberToken);
+        var line = new DiffLine(DiffLineKind.Added, 0, 7, content, hi);
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, painter);
+
+        s.Should().Contain(AnsiPalette.BgAddedHi);
+        s.Should().Contain(SyntaxPalette.Bright(TokenKind.Number));
     }
 }

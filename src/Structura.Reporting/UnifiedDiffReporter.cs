@@ -1,4 +1,5 @@
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
@@ -63,7 +64,7 @@ public static class UnifiedDiffReporter
 
         foreach (DiffLine line in lines)
         {
-            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode);
+            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode, NullPainter.Instance);
             writer.WriteLine(rendered);
         }
     }
