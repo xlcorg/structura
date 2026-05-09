@@ -284,7 +284,7 @@ public sealed class SideBySideDiffReporterTests
     {
         var doc = new FakeStructuraDocument(Source, Array.Empty<DocumentChange>());
 
-        var act = () => SideBySideDiffReporter.Print(doc, null!);
+        var act = () => SideBySideDiffReporter.Print(doc, writer: null!);
 
         act.Should().Throw<System.ArgumentNullException>();
     }

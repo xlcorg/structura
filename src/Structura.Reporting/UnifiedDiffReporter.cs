@@ -16,9 +16,14 @@ public static class UnifiedDiffReporter
 
     public static void Print(IStructuraDocument document)
     {
+        Print(document, DefaultOptions);
+    }
+
+    public static void Print(IStructuraDocument document, UnifiedDiffOptions options)
+    {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
-        RenderTo(document, Console.Out, DefaultOptions, useColor, useUnicode);
+        RenderTo(document, Console.Out, options, useColor, useUnicode);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer)

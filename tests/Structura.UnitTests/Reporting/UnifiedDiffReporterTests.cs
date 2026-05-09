@@ -139,7 +139,7 @@ public sealed class UnifiedDiffReporterTests
     public void Print_NullWriter_Throws()
     {
         var doc = new FakeStructuraDocument("x", System.Array.Empty<DocumentChange>());
-        System.Action act = () => UnifiedDiffReporter.Print(doc, null!);
+        System.Action act = () => UnifiedDiffReporter.Print(doc, writer: null!);
         act.Should().Throw<System.ArgumentNullException>();
     }
 }

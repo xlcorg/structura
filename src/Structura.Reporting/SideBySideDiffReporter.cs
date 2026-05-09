@@ -14,9 +14,14 @@ public static class SideBySideDiffReporter
 
     public static void Print(IStructuraDocument document)
     {
+        Print(document, DefaultOptions);
+    }
+
+    public static void Print(IStructuraDocument document, SideBySideDiffOptions options)
+    {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
-        RenderTo(document, Console.Out, DefaultOptions, useColor, useUnicode);
+        RenderTo(document, Console.Out, options, useColor, useUnicode);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer)
