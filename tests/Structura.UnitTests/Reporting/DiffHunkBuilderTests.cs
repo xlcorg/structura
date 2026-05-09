@@ -206,4 +206,51 @@ public sealed class DiffHunkBuilderTests
         lines.Where(l => l.Kind == DiffLineKind.Added).Should().HaveCount(1);
         lines.First(l => l.Kind == DiffLineKind.Added).Content.Should().Contain("years").And.Contain("42");
     }
+
+    [Fact]
+    public void Build_SingleLineChange_InlineHighlight_HasExpectedColumnRange()
+    {
+        // Replace 30 with 42 — expect highlight on the "30"/"42" substring at
+        // exactly its column position within the line.
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        // The line "  \"age\": 30," — "30" starts at column 9 (0-based: 2 spaces, '"', a, g, e, '"', ':', ' ' = 8 chars before).
+        const int expectedColumn = 9;
+        const int expectedLength = 2;
+
+        var c = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var doc = new FakeStructuraDocument(Source, new[] { c })
+        {
+            CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
+        };
+
+        var lines = new DiffHunkBuilder().Build(doc, new UnifiedDiffOptions());
+
+        DiffLine removed = lines.First(l => l.Kind == DiffLineKind.Removed);
+        removed.InlineHighlights.Should().HaveCount(1);
+        removed.InlineHighlights[0].Start.Should().Be(expectedColumn);
+        removed.InlineHighlights[0].Length.Should().Be(expectedLength);
+
+        DiffLine added = lines.First(l => l.Kind == DiffLineKind.Added);
+        added.InlineHighlights.Should().HaveCount(1);
+        added.InlineHighlights[0].Start.Should().Be(expectedColumn);
+        added.InlineHighlights[0].Length.Should().Be(expectedLength);
+    }
+
+    [Fact]
+    public void Build_InlineHighlightDisabled_NoHighlights()
+    {
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        var c = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var doc = new FakeStructuraDocument(Source, new[] { c })
+        {
+            CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
+        };
+
+        var lines = new DiffHunkBuilder().Build(doc, new UnifiedDiffOptions { InlineHighlight = false });
+
+        foreach (DiffLine l in lines)
+        {
+            l.InlineHighlights.Should().BeEmpty();
+        }
+    }
 }

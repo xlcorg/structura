@@ -25,7 +25,7 @@ internal sealed class DiffHunkBuilder
         string[] newLines = SplitLines(document.CurrentText);
 
         List<ChangeRange> ranges = MapChangesToLineRanges(document.OriginalText, changes);
-        List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines, oldLines.Length);
+        List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines);
 
         var output = new List<DiffLine>();
         for (var i = 0; i < hunks.Count; i++)
@@ -34,7 +34,7 @@ internal sealed class DiffHunkBuilder
             {
                 output.Add(new DiffLine(DiffLineKind.HunkSeparator, 0, string.Empty, Array.Empty<ColumnRange>()));
             }
-            EmitHunk(output, hunks[i], oldLines, newLines, options.ContextLines, ranges, document.OriginalText, options.InlineHighlight);
+            EmitHunk(output, hunks[i], oldLines, newLines, options.ContextLines, document.OriginalText, options.InlineHighlight);
         }
 
         return output;
@@ -105,7 +105,7 @@ internal sealed class DiffHunkBuilder
         return n;
     }
 
-    private static List<HunkRange> GroupIntoHunks(List<ChangeRange> ranges, int contextLines, int oldLinesTotal)
+    private static List<HunkRange> GroupIntoHunks(List<ChangeRange> ranges, int contextLines)
     {
         var hunks = new List<HunkRange>();
         if (ranges.Count == 0)
@@ -139,10 +139,22 @@ internal sealed class DiffHunkBuilder
         int newStart = int.MaxValue, newEnd = int.MinValue;
         foreach (ChangeRange r in group)
         {
-            if (r.OldStartLine < oldStart) oldStart = r.OldStartLine;
-            if (r.OldEndLine > oldEnd) oldEnd = r.OldEndLine;
-            if (r.NewStartLine < newStart) newStart = r.NewStartLine;
-            if (r.NewEndLine > newEnd) newEnd = r.NewEndLine;
+            if (r.OldStartLine < oldStart)
+            {
+                oldStart = r.OldStartLine;
+            }
+            if (r.OldEndLine > oldEnd)
+            {
+                oldEnd = r.OldEndLine;
+            }
+            if (r.NewStartLine < newStart)
+            {
+                newStart = r.NewStartLine;
+            }
+            if (r.NewEndLine > newEnd)
+            {
+                newEnd = r.NewEndLine;
+            }
         }
         return new HunkRange(oldStart, oldEnd, newStart, newEnd, group);
     }
@@ -153,7 +165,6 @@ internal sealed class DiffHunkBuilder
         string[] oldLines,
         string[] newLines,
         int contextLines,
-        List<ChangeRange> allRanges,
         string originalText,
         bool inlineHighlight)
     {
@@ -221,7 +232,7 @@ internal sealed class DiffHunkBuilder
             int lineStart = LineStartOffset(originalText, oldLineIndex);
             int colStart = oldLineIndex == c.OldStartLine ? c.Change.Span.Start - lineStart : 0;
             int colEnd = oldLineIndex == c.OldEndLine
-                ? c.Change.Span.End - LineStartOffset(originalText, oldLineIndex)
+                ? c.Change.Span.End - lineStart
                 : contentLength;
             int clampedStart = Math.Clamp(colStart, 0, contentLength);
             int clampedEnd = Math.Clamp(colEnd, 0, contentLength);
