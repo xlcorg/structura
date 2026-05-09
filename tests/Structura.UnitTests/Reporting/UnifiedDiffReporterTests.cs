@@ -117,7 +117,7 @@ public sealed class UnifiedDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new UnifiedDiffOptions { ShowFullFile = true };
+        var options = new DiffReporterOptions { ShowFullFile = true };
         UnifiedDiffReporter.Print(doc, sw, options);
 
         string output = sw.ToString();

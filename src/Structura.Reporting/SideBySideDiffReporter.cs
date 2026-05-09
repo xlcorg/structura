@@ -23,14 +23,14 @@ public static class SideBySideDiffReporter
     // Minimum visible content characters per side before truncation kicks in.
     private const int MinContentPerSide = 1;
 
-    private static readonly SideBySideDiffOptions DefaultOptions = new();
+    private static readonly DiffReporterOptions DefaultOptions = new();
 
     public static void Print(IStructuraDocument document)
     {
         Print(document, DefaultOptions);
     }
 
-    public static void Print(IStructuraDocument document, SideBySideDiffOptions options)
+    public static void Print(IStructuraDocument document, DiffReporterOptions options)
     {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
@@ -43,7 +43,7 @@ public static class SideBySideDiffReporter
         RenderTo(document, writer, DefaultOptions, FallbackTotalWidth, useColor: false, useUnicode: true);
     }
 
-    public static void Print(IStructuraDocument document, TextWriter writer, SideBySideDiffOptions options)
+    public static void Print(IStructuraDocument document, TextWriter writer, DiffReporterOptions options)
     {
         RenderTo(document, writer, options, FallbackTotalWidth, useColor: false, useUnicode: true);
     }
@@ -51,7 +51,7 @@ public static class SideBySideDiffReporter
     internal static void RenderTo(
         IStructuraDocument document,
         TextWriter writer,
-        SideBySideDiffOptions options,
+        DiffReporterOptions options,
         int totalWidth,
         bool useColor,
         bool useUnicode)
@@ -67,13 +67,7 @@ public static class SideBySideDiffReporter
             return;
         }
 
-        UnifiedDiffOptions hunkOptions = new()
-        {
-            ContextLines = options.ContextLines,
-            InlineHighlight = options.InlineHighlight,
-            ShowFullFile = options.ShowFullFile,
-        };
-        IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, hunkOptions);
+        IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, options);
         DiffStats stats = DiffStats.Compute(lines);
 
         int gutterWidth = stats.MaxLineNumber.ToString().Length;

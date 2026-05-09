@@ -10,7 +10,7 @@ namespace Structura.Reporting.Internal;
 /// </summary>
 internal static class DiffHunkBuilder
 {
-    public static IReadOnlyList<DiffLine> Build(IStructuraDocument document, UnifiedDiffOptions options)
+    public static IReadOnlyList<DiffLine> Build(IStructuraDocument document, DiffReporterOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);

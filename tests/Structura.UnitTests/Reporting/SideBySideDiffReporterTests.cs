@@ -17,9 +17,9 @@ public sealed class SideBySideDiffReporterTests
         "  \"role\": \"admin\"\n" +
         "}";
 
-    private static void Render(IStructuraDocument doc, System.IO.StringWriter sw, int totalWidth, SideBySideDiffOptions? options = null)
+    private static void Render(IStructuraDocument doc, System.IO.StringWriter sw, int totalWidth, DiffReporterOptions? options = null)
     {
-        SideBySideDiffOptions effective = options ?? new SideBySideDiffOptions();
+        DiffReporterOptions effective = options ?? new DiffReporterOptions();
         SideBySideDiffReporter.RenderTo(doc, sw, effective, totalWidth, useColor: false, useUnicode: true);
     }
 
@@ -193,7 +193,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { ContextLines = 0 };
+        var options = new DiffReporterOptions { ContextLines = 0 };
         Render(doc, sw, 120, options);
 
         string output = sw.ToString();
@@ -214,7 +214,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { ShowFullFile = true };
+        var options = new DiffReporterOptions { ShowFullFile = true };
         Render(doc, sw, 120, options);
 
         string output = sw.ToString();
@@ -261,7 +261,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { ShowFullFile = true };
+        var options = new DiffReporterOptions { ShowFullFile = true };
         Render(doc, sw, 120, options);
 
         string output = sw.ToString();
