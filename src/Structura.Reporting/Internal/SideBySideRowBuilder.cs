@@ -15,8 +15,6 @@ internal static class SideBySideRowBuilder
 {
     public static IReadOnlyList<SideBySideRow> Build(IReadOnlyList<DiffLine> lines)
     {
-        ArgumentNullException.ThrowIfNull(lines);
-
         var rows = new List<SideBySideRow>(lines.Count);
         var i = 0;
         while (i < lines.Count)

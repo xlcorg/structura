@@ -7,10 +7,12 @@ namespace Structura.Reporting.Internal;
 /// <c>{leftCell}{separator}{rightCell}</c>, where each cell is
 /// <c>{lineNumber:>W} {sigil} {content:Wcol}</c>, the separator is
 /// <c> │ </c> (or <c> | </c> with <c>useUnicode == false</c>) and content is
-/// truncated to <paramref name="contentWidth"/> with <c>…</c> / <c>&gt;</c> as needed.
+/// truncated to <c>contentWidth</c> with <c>…</c> / <c>&gt;</c> as needed.
 /// </summary>
 internal static class SideBySideRowRenderer
 {
+    private readonly record struct TruncatedContent(string Visible, int VisibleContentLength, string Padding);
+
     public static string Render(
         SideBySideRow row,
         int gutterWidth,
@@ -72,8 +74,6 @@ internal static class SideBySideRowRenderer
 
         return RenderChangedCell(line, gutter, sigil, truncation, useColor);
     }
-
-    private readonly record struct TruncatedContent(string Visible, int VisibleContentLength, string Padding);
 
     private static TruncatedContent TruncateContent(string content, int contentWidth, bool useUnicode)
     {

@@ -8,13 +8,13 @@ namespace Structura.UnitTests.Reporting;
 
 public sealed class SideBySideRowBuilderTests
 {
-    private static readonly System.Collections.Generic.IReadOnlyList<ColumnRange> NoRanges =
-        System.Array.Empty<ColumnRange>();
+    private static readonly IReadOnlyList<ColumnRange> NoRanges =
+        Array.Empty<ColumnRange>();
 
     [Fact]
     public void Build_EmptyInput_ReturnsEmpty()
     {
-        var rows = SideBySideRowBuilder.Build(System.Array.Empty<DiffLine>());
+        var rows = SideBySideRowBuilder.Build(Array.Empty<DiffLine>());
 
         rows.Should().BeEmpty();
     }

@@ -78,7 +78,7 @@ public static class SideBySideDiffReporter
 
         int gutterWidth = maxLineNumber.ToString().Length;
         int totalWidth = options.TotalWidth ?? GetConsoleWindowWidthSafe();
-        int minTotal = 2 * (gutterWidth + 3) + 3 + 2;
+        int minTotal = 2 * (gutterWidth + 3) + 3 + 2; // 2 cell prefixes + separator + min 1 char per side
         if (totalWidth < minTotal)
         {
             totalWidth = minTotal;
