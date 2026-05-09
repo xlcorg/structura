@@ -1,6 +1,7 @@
 using FluentAssertions;
 
 using Structura.Reporting;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 using Xunit;
@@ -149,5 +150,45 @@ public sealed class UnifiedDiffReporterTests
         var options = new DiffReporterOptions();
 
         options.SyntaxHighlight.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RenderTo_ColorEnabled_SyntaxHighlightOn_AppliesKeyAndNumberFg()
+    {
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        var change = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var changes = new[] { change };
+        string current = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..];
+        var doc = new FakeStructuraDocument(Source, changes, documentName: "test.json")
+        {
+            CurrentTextOverride = current,
+        };
+        var sw = new System.IO.StringWriter();
+
+        UnifiedDiffReporter.RenderTo(doc, sw, new DiffReporterOptions(), useColor: true, useUnicode: true);
+
+        string output = sw.ToString();
+        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Key));
+        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Number));
+    }
+
+    [Fact]
+    public void RenderTo_ColorEnabled_SyntaxHighlightOff_NoTokenFg()
+    {
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        var change = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var changes = new[] { change };
+        string current = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..];
+        var doc = new FakeStructuraDocument(Source, changes, documentName: "test.json")
+        {
+            CurrentTextOverride = current,
+        };
+        var sw = new System.IO.StringWriter();
+
+        UnifiedDiffReporter.RenderTo(doc, sw, new DiffReporterOptions { SyntaxHighlight = false }, useColor: true, useUnicode: true);
+
+        string output = sw.ToString();
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Key));
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
     }
 }

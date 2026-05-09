@@ -37,7 +37,7 @@ public static class UnifiedDiffReporter
         RenderTo(document, writer, options, useColor: false, useUnicode: true);
     }
 
-    private static void RenderTo(
+    internal static void RenderTo(
         IStructuraDocument document,
         TextWriter writer,
         DiffReporterOptions options,
@@ -59,12 +59,16 @@ public static class UnifiedDiffReporter
         DiffStats stats = DiffStats.Compute(lines);
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
+        IDiffSyntaxPainter painter = useColor
+            ? PainterFactory.For(document, options.SyntaxHighlight)
+            : NullPainter.Instance;
+
         DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
         writer.WriteLine();
 
         foreach (DiffLine line in lines)
         {
-            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode, NullPainter.Instance);
+            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode, painter);
             writer.WriteLine(rendered);
         }
     }
