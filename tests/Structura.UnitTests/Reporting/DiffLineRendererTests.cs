@@ -67,7 +67,9 @@ public sealed class DiffLineRendererTests
 
         s.Should().StartWith(AnsiPalette.BgRemovedRow);
         s.Should().EndWith(AnsiPalette.BgDefault);
-        s.Should().Contain("  7 -   \"x\": 1,");
+        s.Should().Contain(AnsiPalette.FgRemovedSigil);
+        s.Should().Contain("  7 -");                  // gutter+sigil under colored fg
+        s.Should().Contain("  \"x\": 1,");            // content under default fg
     }
 
     [Fact]

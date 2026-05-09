@@ -39,15 +39,18 @@ internal static class DiffLineRenderer
         string highlightBg = line.Kind == DiffLineKind.Removed
             ? AnsiPalette.BgRemovedHi
             : AnsiPalette.BgAddedHi;
+        string sigilFg = line.Kind == DiffLineKind.Removed
+            ? AnsiPalette.FgRemovedSigil
+            : AnsiPalette.FgAddedSigil;
 
         if (line.InlineHighlights.Count == 0)
         {
-            return rowBg + body + " " + AnsiPalette.BgDefault;
+            return rowBg + sigilFg + gutter + " " + sigil + AnsiPalette.FgDefault + " " + line.Content + " " + AnsiPalette.BgDefault;
         }
 
         var sb = new StringBuilder();
         sb.Append(rowBg);
-        sb.Append(gutter).Append(' ').Append(sigil).Append(' ');
+        sb.Append(sigilFg).Append(gutter).Append(' ').Append(sigil).Append(AnsiPalette.FgDefault).Append(' ');
 
         // Inline-highlight ranges are over content (0..content.Length).
         int cursor = 0;
