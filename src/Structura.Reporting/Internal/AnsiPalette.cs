@@ -21,7 +21,7 @@ internal static class AnsiPalette
     // Backgrounds
     public const string BgRemovedRow = "\x1b[48;5;52m";   // dark red row bg
     public const string BgAddedRow = "\x1b[48;5;22m";     // dark green row bg
-    public const string BgRemovedHi = "\x1b[48;5;88m";    // brighter red highlight
-    public const string BgAddedHi = "\x1b[48;5;28m";      // brighter green highlight
+    public const string BgRemovedHi = "\x1b[48;5;124m";   // bright red highlight (clearly stands out vs row 52)
+    public const string BgAddedHi = "\x1b[48;5;34m";      // bright green highlight (clearly stands out vs row 22)
     public const string BgDefault = "\x1b[49m";
 }
