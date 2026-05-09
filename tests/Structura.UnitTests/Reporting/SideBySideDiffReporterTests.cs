@@ -17,8 +17,11 @@ public sealed class SideBySideDiffReporterTests
         "  \"role\": \"admin\"\n" +
         "}";
 
-    private static SideBySideDiffOptions OptionsWithWidth(int width) =>
-        new() { TotalWidth = width };
+    private static void Render(IStructuraDocument doc, System.IO.StringWriter sw, int totalWidth, SideBySideDiffOptions? options = null)
+    {
+        SideBySideDiffOptions effective = options ?? new SideBySideDiffOptions();
+        SideBySideDiffReporter.RenderTo(doc, sw, effective, totalWidth, useColor: false, useUnicode: true);
+    }
 
     [Fact]
     public void Print_NoChanges_WritesNoChangesMessage()
@@ -26,7 +29,7 @@ public sealed class SideBySideDiffReporterTests
         var doc = new FakeStructuraDocument(Source, Array.Empty<DocumentChange>(), documentName: "test.json");
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(80));
+        Render(doc, sw, 80);
 
         sw.ToString().Trim().Should().Be("(no changes)");
     }
@@ -44,7 +47,7 @@ public sealed class SideBySideDiffReporterTests
         var unifiedSw = new System.IO.StringWriter();
         UnifiedDiffReporter.Print(doc, unifiedSw);
         var sbsSw = new System.IO.StringWriter();
-        SideBySideDiffReporter.Print(doc, sbsSw, OptionsWithWidth(120));
+        Render(doc, sbsSw, 120);
 
         // Banner is the first 2 lines (then a blank line).
         string[] unifiedLines = unifiedSw.ToString().Split('\n');
@@ -64,7 +67,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(120));
+        Render(doc, sw, 120);
 
         string output = sw.ToString();
         // Separator " │ " must appear on every body row.
@@ -87,7 +90,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(120));
+        Render(doc, sw, 120);
 
         sw.ToString().Should().NotContain("\x1b");
     }
@@ -124,7 +127,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(120));
+        Render(doc, sw, 120);
 
         string output = sw.ToString();
         string[] outputLines = output.Split('\n');
@@ -144,7 +147,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(120));
+        Render(doc, sw, 120);
 
         string output = sw.ToString();
         output.Should().Contain("\"new_key\": 1,");
@@ -174,7 +177,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, OptionsWithWidth(40));
+        Render(doc, sw, 40);
 
         sw.ToString().Should().Contain("…");
     }
@@ -190,8 +193,8 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { TotalWidth = 120, ContextLines = 0 };
-        SideBySideDiffReporter.Print(doc, sw, options);
+        var options = new SideBySideDiffOptions { ContextLines = 0 };
+        Render(doc, sw, 120, options);
 
         string output = sw.ToString();
         output.Should().NotContain("\"name\":");
@@ -211,8 +214,8 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { TotalWidth = 120, ShowFullFile = true };
-        SideBySideDiffReporter.Print(doc, sw, options);
+        var options = new SideBySideDiffOptions { ShowFullFile = true };
+        Render(doc, sw, 120, options);
 
         string output = sw.ToString();
         // Source has 6 lines: {, "name":, "age":, "city":, "role":, }. Full-file
@@ -258,8 +261,8 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        var options = new SideBySideDiffOptions { TotalWidth = 120, ShowFullFile = true };
-        SideBySideDiffReporter.Print(doc, sw, options);
+        var options = new SideBySideDiffOptions { ShowFullFile = true };
+        Render(doc, sw, 120, options);
 
         string output = sw.ToString();
         // No ellipsis separator anywhere in full-file mode.
@@ -336,7 +339,7 @@ public sealed class SideBySideDiffReporterTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.Print(doc, sw, new SideBySideDiffOptions { TotalWidth = 120 });
+        Render(doc, sw, 120);
 
         string output = sw.ToString();
         string[] outputLines = output.Split('\n');

@@ -21,23 +21,27 @@ public static class SideBySideDiffReporter
     {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
-        RenderTo(document, Console.Out, options, useColor, useUnicode);
+        int totalWidth = ComputeTotalWidth();
+        RenderTo(document, Console.Out, options, totalWidth, useColor, useUnicode);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer)
     {
-        RenderTo(document, writer, DefaultOptions, useColor: false, useUnicode: true);
+        int totalWidth = ComputeTotalWidth();
+        RenderTo(document, writer, DefaultOptions, totalWidth, useColor: false, useUnicode: true);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer, SideBySideDiffOptions options)
     {
-        RenderTo(document, writer, options, useColor: false, useUnicode: true);
+        int totalWidth = ComputeTotalWidth();
+        RenderTo(document, writer, options, totalWidth, useColor: false, useUnicode: true);
     }
 
     internal static void RenderTo(
         IStructuraDocument document,
         TextWriter writer,
         SideBySideDiffOptions options,
+        int totalWidth,
         bool useColor,
         bool useUnicode)
     {
@@ -83,13 +87,13 @@ public static class SideBySideDiffReporter
         }
 
         int gutterWidth = maxLineNumber.ToString().Length;
-        int totalWidth = options.TotalWidth ?? GetConsoleWindowWidthSafe();
         int minTotal = 2 * (gutterWidth + 3) + 3 + 2; // 2 cell prefixes + separator + min 1 char per side
-        if (totalWidth < minTotal)
+        int width = totalWidth;
+        if (width < minTotal)
         {
-            totalWidth = minTotal;
+            width = minTotal;
         }
-        int contentWidth = (totalWidth - 2 * (gutterWidth + 3) - 3) / 2;
+        int contentWidth = (width - 2 * (gutterWidth + 3) - 3) / 2;
 
         DiffBanner.Write(writer, document.DocumentName, additions, removals, useColor, useUnicode);
         writer.WriteLine();
@@ -102,15 +106,12 @@ public static class SideBySideDiffReporter
         }
     }
 
-    private static int GetConsoleWindowWidthSafe()
+    private static int ComputeTotalWidth()
     {
+        int width;
         try
         {
-            int width = Console.WindowWidth;
-            // IDE run consoles (Rider, VS, etc.) often report a stub width
-            // like 80 that doesn't match their actual UI. Treat anything
-            // below 100 as unreliable and fall back to 160.
-            return width >= 100 ? width : 160;
+            width = Console.WindowWidth;
         }
         catch (IOException)
         {
@@ -120,5 +121,6 @@ public static class SideBySideDiffReporter
         {
             return 160;
         }
+        return Math.Max(width, 160);
     }
 }

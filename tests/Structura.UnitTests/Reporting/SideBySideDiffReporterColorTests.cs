@@ -25,18 +25,18 @@ public sealed class SideBySideDiffReporterColorTests
         };
     }
 
-    private static string RenderColored(SideBySideDiffOptions options)
+    private static string RenderColored(SideBySideDiffOptions options, int totalWidth = 120)
     {
         var doc = MakeDoc();
         var sw = new System.IO.StringWriter();
-        SideBySideDiffReporter.RenderTo(doc, sw, options, useColor: true, useUnicode: true);
+        SideBySideDiffReporter.RenderTo(doc, sw, options, totalWidth, useColor: true, useUnicode: true);
         return sw.ToString();
     }
 
     [Fact]
     public void Print_ColorEnabled_RemovedCellHasRowBg()
     {
-        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120 });
+        string output = RenderColored(new SideBySideDiffOptions());
 
         output.Should().Contain(AnsiPalette.BgRemovedRow);
         output.Should().Contain(AnsiPalette.BgAddedRow);
@@ -45,7 +45,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_InlineHighlightOn_HasHighlightEscape()
     {
-        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120, InlineHighlight = true });
+        string output = RenderColored(new SideBySideDiffOptions { InlineHighlight = true });
 
         output.Should().Contain(AnsiPalette.BgRemovedHi);
         output.Should().Contain(AnsiPalette.BgAddedHi);
@@ -54,7 +54,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_InlineHighlightOff_NoHighlightEscape()
     {
-        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120, InlineHighlight = false });
+        string output = RenderColored(new SideBySideDiffOptions { InlineHighlight = false });
 
         output.Should().NotContain(AnsiPalette.BgRemovedHi);
         output.Should().NotContain(AnsiPalette.BgAddedHi);
@@ -63,7 +63,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_SeparatorIsDimmed()
     {
-        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120 });
+        string output = RenderColored(new SideBySideDiffOptions());
 
         string sep = $" {AnsiPalette.Dim}│{AnsiPalette.DimOff} ";
         output.Should().Contain(sep);
@@ -72,7 +72,7 @@ public sealed class SideBySideDiffReporterColorTests
     [Fact]
     public void Print_ColorEnabled_RowBgFillsToColumnEdge()
     {
-        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120 });
+        string output = RenderColored(new SideBySideDiffOptions());
 
         // Find a Removed cell. It begins with BgRemovedRow and ends with BgDefault.
         // Between the visible content (which contains "30") and BgDefault, there
@@ -119,7 +119,7 @@ public sealed class SideBySideDiffReporterColorTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.RenderTo(doc, sw, new SideBySideDiffOptions { TotalWidth = 120 }, useColor: true, useUnicode: true);
+        SideBySideDiffReporter.RenderTo(doc, sw, new SideBySideDiffOptions(), totalWidth: 120, useColor: true, useUnicode: true);
 
         string output = sw.ToString();
         string sepWrapped = AnsiPalette.Dim + "…" + AnsiPalette.DimOff;

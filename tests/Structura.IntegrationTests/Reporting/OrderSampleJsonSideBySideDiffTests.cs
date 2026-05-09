@@ -31,7 +31,7 @@ public sealed class OrderSampleJsonSideBySideDiffTests
         order.Currency = "USD";
         var sw = new StringWriter();
 
-        SideBySideDiffReporter.Print(order, sw, new SideBySideDiffOptions { TotalWidth = 200 });
+        SideBySideDiffReporter.RenderTo(order, sw, new SideBySideDiffOptions(), totalWidth: 200, useColor: false, useUnicode: true);
 
         string output = sw.ToString();
         output.Should().Contain("Patched order.sample.json with");
@@ -51,7 +51,7 @@ public sealed class OrderSampleJsonSideBySideDiffTests
         order.Items[1].Manufacturer.CountryCode = "DE";
         var sw = new StringWriter();
 
-        SideBySideDiffReporter.Print(order, sw, new SideBySideDiffOptions { TotalWidth = 200 });
+        SideBySideDiffReporter.RenderTo(order, sw, new SideBySideDiffOptions(), totalWidth: 200, useColor: false, useUnicode: true);
 
         string output = sw.ToString();
         output.Should().Contain("Patched order.sample.json with 8 additions and 8 removals");
