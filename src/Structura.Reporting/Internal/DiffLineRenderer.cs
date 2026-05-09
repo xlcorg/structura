@@ -50,7 +50,8 @@ internal static class DiffLineRenderer
         var sb = new StringBuilder();
         sb.Append(AnsiPalette.Dim).Append(gutter).Append(' ').Append(sigil).Append(AnsiPalette.DimOff);
         sb.Append(' ');
-        AppendContent(sb, line.Content, tokens, Array.Empty<ColumnRange>(), rowBg: string.Empty, highlightBg: string.Empty, useDimPalette: true);
+        var noHighlights = Array.Empty<ColumnRange>();
+        AppendContent(sb, line.Content, tokens, noHighlights, rowBg: string.Empty, highlightBg: string.Empty, useDimPalette: true);
         return sb.ToString();
     }
 
