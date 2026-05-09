@@ -1,4 +1,5 @@
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
@@ -85,7 +86,7 @@ public static class SideBySideDiffReporter
         IReadOnlyList<SideBySideRow> rows = SideBySideRowBuilder.Build(lines);
         foreach (SideBySideRow row in rows)
         {
-            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode);
+            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode, NullPainter.Instance);
             writer.WriteLine(rendered);
         }
     }

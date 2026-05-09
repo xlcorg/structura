@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Structura.Reporting;
 using Structura.Reporting.Internal;
+using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 using Xunit;
@@ -124,5 +125,23 @@ public sealed class SideBySideDiffReporterColorTests
         string output = sw.ToString();
         string sepWrapped = AnsiPalette.Dim + "…" + AnsiPalette.DimOff;
         output.Should().Contain(sepWrapped);
+    }
+
+    [Fact]
+    public void Print_ColorEnabled_SyntaxOn_AddedCellEmbedsKeyFg()
+    {
+        string output = RenderColored(new DiffReporterOptions { SyntaxHighlight = true });
+
+        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Key));
+        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Number));
+    }
+
+    [Fact]
+    public void Print_ColorEnabled_SyntaxOff_NoTokenFg()
+    {
+        string output = RenderColored(new DiffReporterOptions { SyntaxHighlight = false });
+
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Key));
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
     }
 }
