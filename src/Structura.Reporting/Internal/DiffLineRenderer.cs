@@ -25,7 +25,8 @@ internal static class DiffLineRenderer
             _ => ' ',
         };
 
-        string gutter = line.LineNumber.ToString().PadLeft(gutterWidth);
+        int gutterValue = line.Kind == DiffLineKind.Removed ? line.OldLineNumber : line.NewLineNumber;
+        string gutter = gutterValue.ToString().PadLeft(gutterWidth);
         string body = $"{gutter} {sigil} {line.Content}";
 
         if (!useColor)

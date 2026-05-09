@@ -139,7 +139,7 @@ public sealed class OrderSampleJsonReportingTests
 
         UnifiedDiffReporter.Print(order, sw);
 
-        sw.ToString().Should().Contain("Patched(order.sample.json)");
+        sw.ToString().Should().Contain("Patched order.sample.json with");
     }
 
     [Fact]

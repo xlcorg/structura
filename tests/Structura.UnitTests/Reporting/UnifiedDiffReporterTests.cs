@@ -44,7 +44,7 @@ public sealed class UnifiedDiffReporterTests
         UnifiedDiffReporter.Print(doc, sw);
 
         string output = sw.ToString();
-        output.Should().Contain("● Patched(test.json)");
+        output.Should().Contain("● Patched");
         output.Should().Contain("└ Patched test.json with 1 addition and 1 removal");
         output.Should().Contain(" - ");
         output.Should().Contain(" + ");
@@ -87,7 +87,7 @@ public sealed class UnifiedDiffReporterTests
 
         UnifiedDiffReporter.Print(doc, sw);
 
-        sw.ToString().Should().Contain("Patched(alpha/beta.json)");
+        sw.ToString().Should().Contain("Patched alpha/beta.json with");
     }
 
     [Fact]
@@ -107,6 +107,28 @@ public sealed class UnifiedDiffReporterTests
     }
 
     [Fact]
+    public void Print_ShowFullFile_RendersAllLines()
+    {
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        var c = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var doc = new FakeStructuraDocument(Source, new[] { c }, documentName: "test.json")
+        {
+            CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
+        };
+        var sw = new System.IO.StringWriter();
+
+        var options = new UnifiedDiffOptions { ShowFullFile = true };
+        UnifiedDiffReporter.Print(doc, sw, options);
+
+        string output = sw.ToString();
+        output.Should().Contain("\"name\": \"Alice\",");
+        output.Should().Contain("\"city\": \"Paris\"");
+        output.Should().Contain("\"age\": 30,");
+        output.Should().Contain("\"age\": 42,");
+        output.Should().NotContain("…");
+    }
+
+    [Fact]
     public void Print_NullDocument_Throws()
     {
         System.Action act = () => UnifiedDiffReporter.Print(null!, new System.IO.StringWriter());
@@ -117,7 +139,7 @@ public sealed class UnifiedDiffReporterTests
     public void Print_NullWriter_Throws()
     {
         var doc = new FakeStructuraDocument("x", System.Array.Empty<DocumentChange>());
-        System.Action act = () => UnifiedDiffReporter.Print(doc, null!);
+        System.Action act = () => UnifiedDiffReporter.Print(doc, writer: null!);
         act.Should().Throw<System.ArgumentNullException>();
     }
 }

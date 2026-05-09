@@ -39,22 +39,27 @@ public sealed class DiffHunkBuilderTests
         // post-context = lines 3,4,5 (3 available). 2 + 1 + 1 + 3 = 7 lines.
         lines.Should().HaveCount(7);
         lines[0].Kind.Should().Be(DiffLineKind.Context);
-        lines[0].LineNumber.Should().Be(1);
+        lines[0].OldLineNumber.Should().Be(1);
+        lines[0].NewLineNumber.Should().Be(1);
         lines[0].Content.Should().Be("{");
         lines[1].Kind.Should().Be(DiffLineKind.Context);
-        lines[1].LineNumber.Should().Be(2);
+        lines[1].OldLineNumber.Should().Be(2);
+        lines[1].NewLineNumber.Should().Be(2);
         lines[2].Kind.Should().Be(DiffLineKind.Removed);
-        lines[2].LineNumber.Should().Be(3);
+        lines[2].OldLineNumber.Should().Be(3);
         lines[2].Content.Should().Be("  \"age\": 30,");
         lines[3].Kind.Should().Be(DiffLineKind.Added);
-        lines[3].LineNumber.Should().Be(3);
+        lines[3].NewLineNumber.Should().Be(3);
         lines[3].Content.Should().Be("  \"age\": 42,");
         lines[4].Kind.Should().Be(DiffLineKind.Context);
-        lines[4].LineNumber.Should().Be(4);
+        lines[4].OldLineNumber.Should().Be(4);
+        lines[4].NewLineNumber.Should().Be(4);
         lines[5].Kind.Should().Be(DiffLineKind.Context);
-        lines[5].LineNumber.Should().Be(5);
+        lines[5].OldLineNumber.Should().Be(5);
+        lines[5].NewLineNumber.Should().Be(5);
         lines[6].Kind.Should().Be(DiffLineKind.Context);
-        lines[6].LineNumber.Should().Be(6);
+        lines[6].OldLineNumber.Should().Be(6);
+        lines[6].NewLineNumber.Should().Be(6);
         lines[6].Content.Should().Be("}");
     }
 
