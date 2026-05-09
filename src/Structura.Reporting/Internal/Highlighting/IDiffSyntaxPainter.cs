@@ -2,9 +2,10 @@ namespace Structura.Reporting.Internal.Highlighting;
 
 /// <summary>
 /// Tokenizes a single rendered diff line into <see cref="TokenRange"/>s for
-/// foreground coloring. Implementations MUST be stateless across calls — a
-/// per-line CDATA opener that has no closer on the same line tokenizes to
-/// the best-effort point and stops; the next line is tokenized fresh.
+/// foreground coloring. Implementations MUST be stateless across calls —
+/// state must not be carried between lines. Painters tokenize as much of
+/// each line as they can recognize; unmatched constructs degrade to
+/// default-coloring tokens.
 /// </summary>
 internal interface IDiffSyntaxPainter
 {
