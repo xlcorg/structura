@@ -116,4 +116,56 @@ public sealed class OrderSampleJsonReportingTests
         secondHeader.Should().BeGreaterThan(firstHeader);
         thirdHeader.Should().BeGreaterThan(secondHeader);
     }
+
+    // ── UnifiedDiffReporter ───────────────────────────────────────────────
+
+    [Fact]
+    public void UnifiedDiffReporter_NoMutation_PrintsNoChanges()
+    {
+        var order = LoadSample().ParseJson<OrderSampleJson>();
+        var sw = new StringWriter();
+
+        UnifiedDiffReporter.Print(order, sw);
+
+        sw.ToString().Trim().Should().Be("(no changes)");
+    }
+
+    [Fact]
+    public void UnifiedDiffReporter_DocumentName_FromSourceFileName()
+    {
+        var order = LoadSample().ParseJson<OrderSampleJson>();
+        order.Currency = "USD";
+        var sw = new StringWriter();
+
+        UnifiedDiffReporter.Print(order, sw);
+
+        sw.ToString().Should().Contain("Patched(order.sample.json)");
+    }
+
+    [Fact]
+    public void UnifiedDiffReporter_RealMutations_BannerAndHunks()
+    {
+        var order = LoadSample().ParseJson<OrderSampleJson>();
+        order.Currency = "USD";
+        order.Version = 42;
+        order.IsPriority = false;
+        order.Customer.FirstName = "Ivan";
+        order.Customer.Preferences.MarketingConsent = false;
+        order.BillingAddress.City = "Rotterdam";
+        order.Items[0].Quantity = 2;
+        order.Items[1].Manufacturer.CountryCode = "DE";
+        var sw = new StringWriter();
+
+        UnifiedDiffReporter.Print(order, sw);
+
+        string output = sw.ToString();
+        output.Should().Contain("Patched order.sample.json with 20 additions and 20 removals");
+        output.Should().Contain(" - ").And.Contain(" + ");
+        // Old literals must appear on `-` rows.
+        output.Should().Contain("\"RUB\"");
+        // New literals on `+` rows.
+        output.Should().Contain("\"USD\"");
+        output.Should().Contain("Rotterdam");
+        output.Should().Contain("Ivan");
+    }
 }
