@@ -42,10 +42,10 @@ public sealed class StructuraJsonGenerator : IIncrementalGenerator
             string fileName = Path.GetFileName(model.filePath);
             var fileLocation = Location.Create(
                 model.filePath,
-                Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(0, 0),
-                new Microsoft.CodeAnalysis.Text.LinePositionSpan(
-                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0),
-                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0)));
+                TextSpan.FromBounds(0, 0),
+                new LinePositionSpan(
+                    new LinePosition(0, 0),
+                    new LinePosition(0, 0)));
 
             if (!model.ok || model.info is null)
             {

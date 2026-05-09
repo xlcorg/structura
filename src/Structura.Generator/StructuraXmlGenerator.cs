@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -39,10 +40,10 @@ public sealed class StructuraXmlGenerator : IIncrementalGenerator
             string fileName = Path.GetFileName(model.filePath);
             var fileLocation = Location.Create(
                 model.filePath,
-                Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(0, 0),
-                new Microsoft.CodeAnalysis.Text.LinePositionSpan(
-                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0),
-                    new Microsoft.CodeAnalysis.Text.LinePosition(0, 0)));
+                TextSpan.FromBounds(0, 0),
+                new LinePositionSpan(
+                    new LinePosition(0, 0),
+                    new LinePosition(0, 0)));
 
             if (model.info == null)
             {
@@ -80,7 +81,7 @@ public sealed class StructuraXmlGenerator : IIncrementalGenerator
             }
 
             // STR0009 once per (parentType, elementName).
-            var seen = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach ((string parentType, string elementName) in obs.SkippedStructural)
             {
                 string key = parentType + "|" + elementName;

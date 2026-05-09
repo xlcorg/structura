@@ -928,8 +928,8 @@ internal static class GeneratorXmlParser
             if (xml[p] == '<')
             {
                 sawNested = true;
-                ChildClassification? _ = ClassifyChild(xml, ref p, obs);
-                if (_ == null)
+                ChildClassification? probe = ClassifyChild(xml, ref p, obs);
+                if (probe == null)
                 {
                     return null;
                 }
