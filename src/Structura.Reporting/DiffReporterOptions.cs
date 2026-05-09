@@ -3,7 +3,8 @@ namespace Structura.Reporting;
 /// <summary>
 /// Options shared by <see cref="UnifiedDiffReporter"/> and
 /// <see cref="SideBySideDiffReporter"/>. Defaults match the spec: 3 lines of
-/// surrounding context, inline highlight on, full-file rendering off.
+/// surrounding context, inline highlight on, syntax highlight on, full-file
+/// rendering off.
 /// </summary>
 public sealed record DiffReporterOptions
 {
