@@ -55,31 +55,10 @@ public static class UnifiedDiffReporter
         }
 
         IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, options);
+        DiffStats stats = DiffStats.Compute(lines);
+        int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
-        int additions = 0;
-        int removals = 0;
-        int maxLineNumber = 1;
-        foreach (DiffLine line in lines)
-        {
-            if (line.Kind == DiffLineKind.Added)
-            {
-                additions++;
-            }
-            else if (line.Kind == DiffLineKind.Removed)
-            {
-                removals++;
-            }
-
-            int candidate = Math.Max(line.OldLineNumber, line.NewLineNumber);
-            if (candidate > maxLineNumber)
-            {
-                maxLineNumber = candidate;
-            }
-        }
-
-        int gutterWidth = maxLineNumber.ToString().Length;
-
-        DiffBanner.Write(writer, document.DocumentName, additions, removals, useColor, useUnicode);
+        DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
         writer.WriteLine();
 
         foreach (DiffLine line in lines)

@@ -74,29 +74,9 @@ public static class SideBySideDiffReporter
             ShowFullFile = options.ShowFullFile,
         };
         IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, hunkOptions);
+        DiffStats stats = DiffStats.Compute(lines);
 
-        int additions = 0;
-        int removals = 0;
-        int maxLineNumber = 1;
-        foreach (DiffLine line in lines)
-        {
-            if (line.Kind == DiffLineKind.Added)
-            {
-                additions++;
-            }
-            else if (line.Kind == DiffLineKind.Removed)
-            {
-                removals++;
-            }
-
-            int candidate = Math.Max(line.OldLineNumber, line.NewLineNumber);
-            if (candidate > maxLineNumber)
-            {
-                maxLineNumber = candidate;
-            }
-        }
-
-        int gutterWidth = maxLineNumber.ToString().Length;
+        int gutterWidth = stats.MaxLineNumber.ToString().Length;
         int minTotal = 2 * (gutterWidth + CellPaddingChars) + SeparatorChars + 2 * MinContentPerSide;
         int width = totalWidth;
         if (width < minTotal)
@@ -105,7 +85,7 @@ public static class SideBySideDiffReporter
         }
         int contentWidth = (width - 2 * (gutterWidth + CellPaddingChars) - SeparatorChars) / 2;
 
-        DiffBanner.Write(writer, document.DocumentName, additions, removals, useColor, useUnicode);
+        DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
         writer.WriteLine();
 
         IReadOnlyList<SideBySideRow> rows = SideBySideRowBuilder.Build(lines);
