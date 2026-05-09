@@ -70,6 +70,25 @@ public sealed class SideBySideDiffReporterColorTests
     }
 
     [Fact]
+    public void Print_ColorEnabled_RowBgFillsToColumnEdge()
+    {
+        string output = RenderColored(new SideBySideDiffOptions { TotalWidth = 120 });
+
+        // Find a Removed cell. It begins with BgRemovedRow and ends with BgDefault.
+        // Between the visible content (which contains "30") and BgDefault, there
+        // must be padding spaces filling to the column edge — otherwise SBS would
+        // look like Unified and the column-fill design would be lost.
+        int rowStart = output.IndexOf(AnsiPalette.BgRemovedRow, System.StringComparison.Ordinal);
+        rowStart.Should().BeGreaterThanOrEqualTo(0);
+        int rowEnd = output.IndexOf(AnsiPalette.BgDefault, rowStart, System.StringComparison.Ordinal);
+        rowEnd.Should().BeGreaterThan(rowStart);
+
+        string cell = output.Substring(rowStart, rowEnd - rowStart);
+        // The cell must contain trailing whitespace before the BgDefault marker.
+        cell.Should().EndWith(" ", "row bg must extend past content with padding spaces to fill the column");
+    }
+
+    [Fact]
     public void Print_ColorEnabled_HunkSeparatorIsDimmed()
     {
         var sb = new System.Text.StringBuilder();

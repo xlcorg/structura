@@ -219,4 +219,86 @@ public sealed class SideBySideDiffReporterTests
 
         act.Should().Throw<System.ArgumentNullException>();
     }
+
+    [Fact]
+    public void Print_ContextLineNumberingDivergesAfterPriorHunk()
+    {
+        // First hunk: replace single-line "  \"first\": 1," with two lines, shifting
+        // subsequent line numbers by +1. Second hunk far enough away to be a
+        // separate hunk, so its context rows show divergent old/new line numbers.
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("{");
+        sb.AppendLine("  \"first\": 1,");
+        for (var i = 0; i < 18; i++)
+        {
+            sb.AppendLine($"  \"k{i}\": {i},");
+        }
+        sb.AppendLine("  \"last\": 99");
+        sb.Append("}");
+        string src = sb.ToString();
+
+        int firstOffset = src.IndexOf("\"first\": 1", System.StringComparison.Ordinal);
+        int firstLen = "\"first\": 1".Length;
+        int lastOffset = src.IndexOf("\"last\": 99", System.StringComparison.Ordinal);
+        int lastLen = "\"last\": 99".Length;
+
+        // First change: 1 line → 2 lines (cumulativeLineDelta becomes +1).
+        var firstChange = new DocumentChange(
+            "/first",
+            new TextSpan(firstOffset, firstLen),
+            "\"first\": 1",
+            "\"first_a\": 1,\n  \"first_b\": 1");
+        // Second change far below: keeps 1 line replacement, but its context's old
+        // and new line numbers now differ by +1.
+        var lastChange = new DocumentChange(
+            "/last",
+            new TextSpan(lastOffset, lastLen),
+            "\"last\": 99",
+            "\"last\": 100");
+
+        string current =
+            src[..firstOffset] + "\"first_a\": 1,\n  \"first_b\": 1" +
+            src[(firstOffset + firstLen)..lastOffset] + "\"last\": 100" +
+            src[(lastOffset + lastLen)..];
+
+        var doc = new FakeStructuraDocument(src, new[] { firstChange, lastChange }, documentName: "test.json")
+        {
+            CurrentTextOverride = current,
+        };
+        var sw = new System.IO.StringWriter();
+
+        SideBySideDiffReporter.Print(doc, sw, new SideBySideDiffOptions { TotalWidth = 120 });
+
+        string output = sw.ToString();
+        string[] outputLines = output.Split('\n');
+
+        // Find a context row in the second hunk (one of the "k15"/"k16"/"k17" lines).
+        // Such a row will have left-side OLD number X and right-side NEW number X+1
+        // because of the +1 cumulative line delta.
+        bool foundDivergent = outputLines.Any(line =>
+        {
+            int sepIdx = line.IndexOf(" │ ", System.StringComparison.Ordinal);
+            if (sepIdx < 0) { return false; }
+            // Body row template: "{leftGutter} {sigil} {leftContent}  │  {rightGutter} {sigil} {rightContent}"
+            // Both halves of context rows have the same content but different gutters.
+            // We're looking for any row where the gutter numbers differ between sides.
+            string left = line[..sepIdx];
+            string right = line[(sepIdx + 3)..];
+            // Strip and read the leading integer from each half (if present).
+            var leftTrim = left.TrimStart();
+            var rightTrim = right.TrimStart();
+            if (leftTrim.Length == 0 || rightTrim.Length == 0) { return false; }
+            int leftEnd = 0;
+            while (leftEnd < leftTrim.Length && char.IsDigit(leftTrim[leftEnd])) { leftEnd++; }
+            int rightEnd = 0;
+            while (rightEnd < rightTrim.Length && char.IsDigit(rightTrim[rightEnd])) { rightEnd++; }
+            if (leftEnd == 0 || rightEnd == 0) { return false; }
+            int leftNum = int.Parse(leftTrim[..leftEnd]);
+            int rightNum = int.Parse(rightTrim[..rightEnd]);
+            // Context-line indicator: same sigil ' ' on both sides, content matches.
+            return leftNum != rightNum;
+        });
+
+        foundDivergent.Should().BeTrue("after a 1→2 line replacement, context-row gutters in later hunks should diverge");
+    }
 }
