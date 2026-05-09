@@ -44,6 +44,8 @@ public sealed class SmallOrderXml : IStructuraXmlDocument<SmallOrderXml>, IStruc
         _isPriority = bool.Parse(((XmlSourceText)isPriority.Children[0]).Value);
     }
 
+    public static string SourceFileName => "small-order.xml";
+
     public static SmallOrderXml ParseFromXml(string source)
     {
         XmlSourceElement root = XmlSourceParser.Parse(source);

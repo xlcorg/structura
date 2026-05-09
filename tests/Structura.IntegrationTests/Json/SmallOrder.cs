@@ -44,6 +44,8 @@ public sealed class SmallOrder : IStructuraJsonDocument<SmallOrder>, IStructuraD
         _isPriority = isPriority.Value;
     }
 
+    public static string SourceFileName => "small-order.json";
+
     public static SmallOrder ParseFromJson(string source)
     {
         JsonSourceNode root = JsonSourceParser.Parse(source);
