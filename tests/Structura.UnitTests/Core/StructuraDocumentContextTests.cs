@@ -9,6 +9,7 @@ namespace Structura.UnitTests.Core;
 public sealed class StructuraDocumentContextTests
 {
     private const string Source = "{\"currency\":\"RUB\"}";
+    private const string DocumentName = "test.json";
 
     private static TextSpan SpanOf(string source, string fragment)
     {
@@ -18,7 +19,7 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void NoMutation_ApplyEdits_ReturnsSourceByteIdentical()
     {
-        var ctx = new StructuraDocumentContext(Source);
+        var ctx = new StructuraDocumentContext(Source, DocumentName);
 
         ctx.HasChanges.Should().BeFalse();
         ctx.ApplyEdits().Should().Be(Source);
@@ -28,7 +29,7 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void Record_PatchesOnlyTheTargetSpan()
     {
-        var ctx = new StructuraDocumentContext(Source);
+        var ctx = new StructuraDocumentContext(Source, DocumentName);
         TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
@@ -46,7 +47,7 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void Record_ResettingToOriginal_DropsChange()
     {
-        var ctx = new StructuraDocumentContext(Source);
+        var ctx = new StructuraDocumentContext(Source, DocumentName);
         TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
@@ -60,7 +61,7 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void Record_SecondMutationAtSamePath_ReplacesEdit()
     {
-        var ctx = new StructuraDocumentContext(Source);
+        var ctx = new StructuraDocumentContext(Source, DocumentName);
         TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/currency", span, "USD");
@@ -73,7 +74,7 @@ public sealed class StructuraDocumentContextTests
     [Fact]
     public void Record_TwoMutationsAtSameSpanFromDifferentPaths_CollapseToSingleEntry()
     {
-        var ctx = new StructuraDocumentContext(Source);
+        var ctx = new StructuraDocumentContext(Source, DocumentName);
         TextSpan span = SpanOf(Source, "RUB");
 
         ctx.Record("/path/a", span, "USD");
@@ -89,7 +90,7 @@ public sealed class StructuraDocumentContextTests
     public void Changes_AreOrderedByOriginalSpan()
     {
         const string multi = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
-        var ctx = new StructuraDocumentContext(multi);
+        var ctx = new StructuraDocumentContext(multi, DocumentName);
 
         ctx.Record("/c", SpanOf(multi, "3"), "Z");
         ctx.Record("/a", SpanOf(multi, "1"), "X");
