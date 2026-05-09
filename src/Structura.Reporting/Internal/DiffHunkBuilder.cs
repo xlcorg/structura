@@ -125,7 +125,8 @@ internal sealed class DiffHunkBuilder
             }
             else
             {
-                hunks.Add(MakeHunkRange(current));
+                HunkRange completedHunk = MakeHunkRange(current);
+                hunks.Add(completedHunk);
                 current = new List<ChangeRange> { next };
             }
         }

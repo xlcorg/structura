@@ -17,24 +17,26 @@ public static class UnifiedDiffReporter
     public static void Print(IStructuraDocument document)
     {
         bool useColor = !Console.IsOutputRedirected;
-        RenderTo(document, Console.Out, DefaultOptions, useColor);
+        bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
+        RenderTo(document, Console.Out, DefaultOptions, useColor, useUnicode);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer)
     {
-        RenderTo(document, writer, DefaultOptions, useColor: false);
+        RenderTo(document, writer, DefaultOptions, useColor: false, useUnicode: true);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer, UnifiedDiffOptions options)
     {
-        RenderTo(document, writer, options, useColor: false);
+        RenderTo(document, writer, options, useColor: false, useUnicode: true);
     }
 
     private static void RenderTo(
         IStructuraDocument document,
         TextWriter writer,
         UnifiedDiffOptions options,
-        bool useColor)
+        bool useColor,
+        bool useUnicode)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(writer);
@@ -71,7 +73,6 @@ public static class UnifiedDiffReporter
         }
 
         int gutterWidth = maxLineNumber.ToString().Length;
-        bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
 
         WriteBanner(writer, document.DocumentName, additions, removals, useColor, useUnicode);
         writer.WriteLine();
