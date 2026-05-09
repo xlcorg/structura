@@ -5,7 +5,7 @@ namespace Structura.Reporting.Internal;
 /// </summary>
 internal enum DiffLineKind
 {
-    /// <summary>Context line — no sigil, no row background. Gutter shows new-file line number.</summary>
+    /// <summary>Context line — no sigil, no row background. Carries both old- and new-file line numbers (used by the side-by-side renderer; the unified renderer shows the new-file number).</summary>
     Context,
 
     /// <summary>Removed line — sigil <c>-</c>, dark red row bg. Gutter shows old-file line number.</summary>
