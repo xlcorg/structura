@@ -475,10 +475,10 @@ internal static class GeneratorXmlParser
 
     private sealed class ElementInfo
     {
-        public string Name = string.Empty;
-        public List<XmlGenProperty> Attributes = new List<XmlGenProperty>();
-        public List<XmlGenProperty> PureTextChildren = new List<XmlGenProperty>();
-        public List<ChildRef> StructuralChildren = new List<ChildRef>();
+        public string Name { get; init; } = string.Empty;
+        public List<XmlGenProperty> Attributes { get; init; } = new List<XmlGenProperty>();
+        public List<XmlGenProperty> PureTextChildren { get; init; } = new List<XmlGenProperty>();
+        public List<ChildRef> StructuralChildren { get; init; } = new List<ChildRef>();
     }
 
     private readonly struct ChildRef
