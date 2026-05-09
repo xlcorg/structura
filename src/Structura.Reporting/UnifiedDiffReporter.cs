@@ -1,5 +1,3 @@
-using System.Text;
-
 using Structura.Reporting.Internal;
 using Structura.Runtime;
 
