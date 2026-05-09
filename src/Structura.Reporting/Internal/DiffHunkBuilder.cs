@@ -31,11 +31,13 @@ internal static class DiffHunkBuilder
             var fullOutput = new List<DiffLine>();
             HunkRange fullHunk = MakeFullFileHunk(ranges);
             int contextNeeded = ComputeFullFileContextLines(ranges, oldLines.Length);
-            EmitHunk(fullOutput, fullHunk, oldLines, newLines, contextNeeded, document.OriginalText, options.InlineHighlight);
+            EmitContext fullCtx = new(oldLines, newLines, document.OriginalText, contextNeeded, options.InlineHighlight);
+            EmitHunk(fullOutput, fullHunk, fullCtx);
             return fullOutput;
         }
 
         List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines);
+        EmitContext ctx = new(oldLines, newLines, document.OriginalText, options.ContextLines, options.InlineHighlight);
 
         var output = new List<DiffLine>();
         for (var i = 0; i < hunks.Count; i++)
@@ -44,7 +46,7 @@ internal static class DiffHunkBuilder
             {
                 output.Add(new DiffLine(DiffLineKind.HunkSeparator, 0, 0, string.Empty, Array.Empty<ColumnRange>()));
             }
-            EmitHunk(output, hunks[i], oldLines, newLines, options.ContextLines, document.OriginalText, options.InlineHighlight);
+            EmitHunk(output, hunks[i], ctx);
         }
 
         return output;
@@ -66,6 +68,14 @@ internal static class DiffHunkBuilder
         int NewStartLine,
         int NewEndLine,
         List<ChangeRange> Changes);
+
+    // Per-Build invariants threaded through the EmitHunk pipeline.
+    private readonly record struct EmitContext(
+        string[] OldLines,
+        string[] NewLines,
+        string OriginalText,
+        int ContextLines,
+        bool InlineHighlight);
 
     private static List<ChangeRange> MapChangesToLineRanges(string originalText, IReadOnlyList<DocumentChange> changes)
     {
@@ -170,22 +180,20 @@ internal static class DiffHunkBuilder
         return new HunkRange(oldStart, oldEnd, newStart, newEnd, group);
     }
 
-    private static void EmitHunk(
-        List<DiffLine> output,
-        HunkRange hunk,
-        string[] oldLines,
-        string[] newLines,
-        int contextLines,
-        string originalText,
-        bool inlineHighlight)
+    private static void EmitHunk(List<DiffLine> output, HunkRange hunk, EmitContext ctx)
     {
-        int preStart = Math.Max(0, hunk.OldStartLine - contextLines);
-        int postEnd = Math.Min(oldLines.Length - 1, hunk.OldEndLine + contextLines);
+        EmitPreContext(output, hunk, ctx);
+        EmitChangeBody(output, hunk, ctx);
+        EmitPostContext(output, hunk, ctx);
+    }
 
+    private static void EmitPreContext(List<DiffLine> output, HunkRange hunk, EmitContext ctx)
+    {
+        int preStart = Math.Max(0, hunk.OldStartLine - ctx.ContextLines);
         int preDelta = hunk.NewStartLine - hunk.OldStartLine;
         for (int i = preStart; i < hunk.OldStartLine; i++)
         {
-            string strippedLine = StripCarriageReturn(oldLines[i]);
+            string strippedLine = StripCarriageReturn(ctx.OldLines[i]);
             int oldLineNumber = i + 1;
             int newLineNumber = i + 1 + preDelta;
             output.Add(new DiffLine(
@@ -195,7 +203,10 @@ internal static class DiffHunkBuilder
                 strippedLine,
                 Array.Empty<ColumnRange>()));
         }
+    }
 
+    private static void EmitChangeBody(List<DiffLine> output, HunkRange hunk, EmitContext ctx)
+    {
         // Walk changes in old-line order. Between consecutive changes (still
         // inside the hunk range), emit untouched old lines once as Context.
         // Inside a change range, emit Removed for old lines, Added for new lines.
@@ -210,7 +221,7 @@ internal static class DiffHunkBuilder
             // In an unchanged region the old and new line indices advance together.
             while (oldCursor < c.OldStartLine)
             {
-                string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+                string contextContent = StripCarriageReturn(ctx.OldLines[oldCursor]);
                 int oldLineNumber = oldCursor + 1;
                 int newLineNumber = newCursor + 1;
                 output.Add(new DiffLine(
@@ -229,9 +240,9 @@ internal static class DiffHunkBuilder
             int removedStart = Math.Max(c.OldStartLine, oldCursor);
             for (int i = removedStart; i <= c.OldEndLine; i++)
             {
-                string content = StripCarriageReturn(oldLines[i]);
-                IReadOnlyList<ColumnRange> highlights = inlineHighlight
-                    ? CollectRemovedHighlightsForLine(i, hunk.Changes, originalText, content.Length)
+                string content = StripCarriageReturn(ctx.OldLines[i]);
+                IReadOnlyList<ColumnRange> highlights = ctx.InlineHighlight
+                    ? CollectRemovedHighlightsForLine(i, hunk.Changes, ctx.OriginalText, content.Length)
                     : Array.Empty<ColumnRange>();
                 int oldLineNumber = i + 1;
                 output.Add(new DiffLine(DiffLineKind.Removed, oldLineNumber, 0, content, highlights));
@@ -247,9 +258,9 @@ internal static class DiffHunkBuilder
             int addedStart = Math.Max(c.NewStartLine, newCursor);
             for (int i = addedStart; i <= c.NewEndLine; i++)
             {
-                string content = StripCarriageReturn(newLines[i]);
-                IReadOnlyList<ColumnRange> highlights = inlineHighlight
-                    ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, originalText)
+                string content = StripCarriageReturn(ctx.NewLines[i]);
+                IReadOnlyList<ColumnRange> highlights = ctx.InlineHighlight
+                    ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, ctx.OriginalText)
                     : Array.Empty<ColumnRange>();
                 int newLineNumber = i + 1;
                 output.Add(new DiffLine(DiffLineKind.Added, 0, newLineNumber, content, highlights));
@@ -264,7 +275,7 @@ internal static class DiffHunkBuilder
         // (rare — only if hunk grouping over-extended). Emit as Context.
         while (oldCursor <= hunk.OldEndLine)
         {
-            string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+            string contextContent = StripCarriageReturn(ctx.OldLines[oldCursor]);
             int oldLineNumber = oldCursor + 1;
             int newLineNumber = newCursor + 1;
             output.Add(new DiffLine(
@@ -276,11 +287,15 @@ internal static class DiffHunkBuilder
             oldCursor++;
             newCursor++;
         }
+    }
 
+    private static void EmitPostContext(List<DiffLine> output, HunkRange hunk, EmitContext ctx)
+    {
+        int postEnd = Math.Min(ctx.OldLines.Length - 1, hunk.OldEndLine + ctx.ContextLines);
         int postDelta = hunk.NewEndLine - hunk.OldEndLine;
         for (int i = hunk.OldEndLine + 1; i <= postEnd; i++)
         {
-            string strippedLine = StripCarriageReturn(oldLines[i]);
+            string strippedLine = StripCarriageReturn(ctx.OldLines[i]);
             int oldLineNumber = i + 1;
             int newLineNumber = i + 1 + postDelta;
             output.Add(new DiffLine(
