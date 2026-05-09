@@ -80,13 +80,17 @@ public static class SideBySideDiffReporter
         }
         int contentWidth = (width - 2 * (gutterWidth + CellPaddingChars) - SeparatorChars) / 2;
 
+        IDiffSyntaxPainter painter = useColor
+            ? PainterFactory.For(document, options.SyntaxHighlight)
+            : NullPainter.Instance;
+
         DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
         writer.WriteLine();
 
         IReadOnlyList<SideBySideRow> rows = SideBySideRowBuilder.Build(lines);
         foreach (SideBySideRow row in rows)
         {
-            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode, NullPainter.Instance);
+            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode, painter);
             writer.WriteLine(rendered);
         }
     }
