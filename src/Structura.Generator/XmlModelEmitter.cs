@@ -528,27 +528,6 @@ internal static class XmlModelEmitter
         }
     }
 
-    private static void EmitCollectionItemsInit(
-        StringBuilder sb,
-        XmlGenCollection coll,
-        string csharpPropertyName,
-        string sourceElementVar,
-        string parentPathPrefixExpr,
-        string contextExpr,
-        bool wrapperFlattenedSource,
-        string indent)
-    {
-        // Used by the wrapper class itself to populate its inner collection.
-        EmitCollectionItemsInitFromWrapper(
-            sb,
-            coll,
-            csharpPropertyName,
-            wrapperVarName: sourceElementVar,
-            parentPathPrefixExpr: parentPathPrefixExpr,
-            contextExpr: contextExpr,
-            indent: indent);
-    }
-
     /// <summary>
     /// Emits the loop body that walks the children of <paramref name="wrapperVarName"/>
     /// and builds the collection, storing into the backing field

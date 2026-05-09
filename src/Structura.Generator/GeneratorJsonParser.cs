@@ -175,7 +175,7 @@ internal static class GeneratorJsonParser
                     {
                         observedPrimitiveKind = itemKind.Value;
                     }
-                    else if (!TryMergePrimitiveKinds(observedPrimitiveKind.Value, itemKind.Value, out JsonGenScalarKind merged))
+                    else if (!TryMergeScalarKinds(observedPrimitiveKind.Value, itemKind.Value, out JsonGenScalarKind merged))
                     {
                         heterogeneous = true;
                     }
@@ -331,11 +331,6 @@ internal static class GeneratorJsonParser
 
         merged = default;
         return false;
-    }
-
-    private static bool TryMergePrimitiveKinds(JsonGenScalarKind a, JsonGenScalarKind b, out JsonGenScalarKind merged)
-    {
-        return TryMergeScalarKinds(a, b, out merged);
     }
 
     private static JsonGenScalarKind? TryClassifyScalar(string json, ref int p)
