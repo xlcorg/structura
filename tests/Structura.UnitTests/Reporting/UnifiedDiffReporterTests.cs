@@ -142,4 +142,12 @@ public sealed class UnifiedDiffReporterTests
         System.Action act = () => UnifiedDiffReporter.Print(doc, writer: null!);
         act.Should().Throw<System.ArgumentNullException>();
     }
+
+    [Fact]
+    public void DiffReporterOptions_Defaults_SyntaxHighlightIsTrue()
+    {
+        var options = new DiffReporterOptions();
+
+        options.SyntaxHighlight.Should().BeTrue();
+    }
 }
