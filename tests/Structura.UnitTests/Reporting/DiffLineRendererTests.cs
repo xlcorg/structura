@@ -191,8 +191,10 @@ public sealed class DiffLineRendererTests
     }
 
     [Fact]
-    public void Render_AddedLine_TokenInsideInlineHighlight_KeepsBothFgAndHighlightBg()
+    public void Render_AddedLine_TokenFullyInsideHighlight_TokenFgSuppressed()
     {
+        // Token covers exactly the highlighted span — yellow/mauve on bright bg is unreadable,
+        // so the renderer drops token fg inside highlights; bg + bold is the change indicator.
         const string content = "  \"x\": 1,";
         var hi = new[] { new ColumnRange(7, 1) };
         var numberRange = new ColumnRange(7, 1);
@@ -203,6 +205,27 @@ public sealed class DiffLineRendererTests
         string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, painter);
 
         s.Should().Contain(AnsiPalette.BgAddedHi);
-        s.Should().Contain(SyntaxPalette.Bright(TokenKind.Number));
+        s.Should().Contain(AnsiPalette.Bold);
+        s.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
+    }
+
+    [Fact]
+    public void Render_AddedLine_TokenSpansBeyondHighlight_RestoresFgAfterHighlight()
+    {
+        // Token is wider than the highlight — fg suppressed inside, but the bright color
+        // re-emits after the highlight closes so the token's tail keeps its color.
+        const string content = "  \"key\": \"abc\",";
+        var hi = new[] { new ColumnRange(8, 5) };
+        var stringRange = new ColumnRange(7, 6);
+        var stringToken = new TokenRange(stringRange, TokenKind.String);
+        var painter = new StubPainter(stringToken);
+        var line = new DiffLine(DiffLineKind.Added, 0, 7, content, hi);
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true, painter);
+
+        s.Should().Contain(AnsiPalette.BgAddedHi);
+        // The String yellow appears at least once — for the slice of the token that
+        // falls outside the highlight (col 7 only, since the highlight starts at col 8).
+        s.Should().Contain(SyntaxPalette.Bright(TokenKind.String));
     }
 }

@@ -169,7 +169,9 @@ public sealed class UnifiedDiffReporterTests
 
         string output = sw.ToString();
         output.Should().Contain(SyntaxPalette.Bright(TokenKind.Key));
-        output.Should().Contain(SyntaxPalette.Bright(TokenKind.Number));
+        // Number fg is suppressed inside the inline-highlight (the changed "30"/"42" span);
+        // bright bg + bold is the change indicator there.
+        output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
     }
 
     [Fact]

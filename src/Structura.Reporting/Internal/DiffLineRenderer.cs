@@ -102,6 +102,11 @@ internal static class DiffLineRenderer
             }
             bool inHighlightAtCol = highlightIndex < highlights.Count && highlights[highlightIndex].Start <= col;
 
+            if (inHighlightAtCol)
+            {
+                fgAtCol = string.Empty;
+            }
+
             if (col == 0 || kindAtCol != activeTokenKind || fgAtCol != activeFg)
             {
                 sb.Append(fgAtCol.Length > 0 ? fgAtCol : AnsiPalette.FgDefault);
