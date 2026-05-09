@@ -82,4 +82,27 @@ public sealed class DiffLineRendererTests
         s.Should().Contain(AnsiPalette.BgAddedHi);
         s.Should().Contain(AnsiPalette.BgAddedRow);
     }
+
+    [Fact]
+    public void Render_AddedLine_TwoNonOverlappingHighlights_BothEmbedded()
+    {
+        // content "ab cd ef" — highlight "ab" at [0,2) and "ef" at [6,2).
+        var ranges = new[]
+        {
+            new ColumnRange(0, 2),
+            new ColumnRange(6, 2),
+        };
+        var line = new DiffLine(DiffLineKind.Added, 1, "ab cd ef", ranges);
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 1, useColor: true, useUnicode: true);
+
+        // Both highlight regions present; row bg toggled around them.
+        int firstHi = s.IndexOf(AnsiPalette.BgAddedHi, System.StringComparison.Ordinal);
+        int secondHi = s.IndexOf(AnsiPalette.BgAddedHi, firstHi + 1, System.StringComparison.Ordinal);
+        firstHi.Should().BeGreaterThan(0);
+        secondHi.Should().BeGreaterThan(firstHi);
+
+        // Plain content "cd" appears between the two highlight regions.
+        s.Should().Contain("cd");
+    }
 }

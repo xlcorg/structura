@@ -59,7 +59,7 @@ internal static class DiffLineRenderer
                 sb.Append(line.Content, cursor, leadLen);
             }
             sb.Append(highlightBg);
-            int len = Math.Min(r.Length, line.Content.Length - r.Start);
+            int len = Math.Max(0, Math.Min(r.Length, line.Content.Length - r.Start));
             sb.Append(line.Content, r.Start, len);
             sb.Append(rowBg);
             cursor = r.End;
