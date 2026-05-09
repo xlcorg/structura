@@ -98,7 +98,8 @@ internal static class JsonModelEmitter
         var nestedBindings = new List<NestedObjectBinding>();
         foreach (JsonGenNestedObject n in obj.NestedObjects)
         {
-            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(n.Name), usedNames);
+            string pascalKey = IdentifierSanitizer.ToPascalCase(n.Name);
+            string propName = MakeUnique(pascalKey, usedNames);
             // Class name must differ from the property name (CS0102: a property
             // and a nested class on the same outer can't share a name). XML uses
             // a "Group" suffix for the same situation; JSON uses "Type".
@@ -120,7 +121,8 @@ internal static class JsonModelEmitter
                 continue;
             }
 
-            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(coll.Name), usedNames);
+            string pascalKey = IdentifierSanitizer.ToPascalCase(coll.Name);
+            string propName = MakeUnique(pascalKey, usedNames);
             string itemTypeName;
             if (coll.ItemKind == JsonGenItemKind.Primitive)
             {

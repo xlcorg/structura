@@ -57,7 +57,8 @@ internal static class XmlModelEmitter
         var rootNestedBindings = new List<NestedObjectBinding>();
         foreach (XmlGenNestedObject nested in info.NestedObjects)
         {
-            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(nested.XmlElementName), usedRootNames);
+            string pascalName = IdentifierSanitizer.ToPascalCase(nested.XmlElementName);
+            string propName = MakeUnique(pascalName, usedRootNames);
             rootNestedBindings.Add(new NestedObjectBinding(
                 xmlElementName: nested.XmlElementName,
                 propertyName: propName,
@@ -321,7 +322,8 @@ internal static class XmlModelEmitter
         var itemNestedBindings = new List<NestedObjectBinding>();
         foreach (XmlGenNestedObject inner in item.NestedObjects)
         {
-            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(inner.XmlElementName), usedNames);
+            string pascalName = IdentifierSanitizer.ToPascalCase(inner.XmlElementName);
+            string propName = MakeUnique(pascalName, usedNames);
             itemNestedBindings.Add(new NestedObjectBinding(
                 xmlElementName: inner.XmlElementName,
                 propertyName: propName,
@@ -851,7 +853,8 @@ internal static class XmlModelEmitter
         var nestedBindings = new List<NestedObjectBinding>();
         foreach (XmlGenNestedObject inner in body.NestedObjects)
         {
-            string propName = MakeUnique(IdentifierSanitizer.ToPascalCase(inner.XmlElementName), usedNames);
+            string pascalName = IdentifierSanitizer.ToPascalCase(inner.XmlElementName);
+            string propName = MakeUnique(pascalName, usedNames);
             nestedBindings.Add(new NestedObjectBinding(
                 xmlElementName: inner.XmlElementName,
                 propertyName: propName,
