@@ -89,8 +89,38 @@ internal static class JsonModelEmitter
         string ctorIndent,
         string sourceObjectVar)
     {
-        // 1. Resolve unique C# member names per scope.
+        ObjectBindings bindings = ResolveBindings(obj);
+        EmitBackingFields(sb, bindings, classIndent, isRoot);
+        EmitConstructor(sb, bindings, className, isRoot, classIndent, ctorIndent, sourceObjectVar);
+        EmitPublicProperties(sb, bindings, classIndent, ctorIndent, isRoot);
+    }
+
+    /// <summary>
+    /// Carries the resolved-name C# bindings for one object scope: the three
+    /// lists are produced by <see cref="ResolveBindings"/> and consumed by the
+    /// three subsequent emission phases.
+    /// </summary>
+    private sealed class ObjectBindings
+    {
+        public ObjectBindings(
+            List<ScalarBinding> scalars,
+            List<NestedObjectBinding> nestedObjects,
+            List<CollectionBinding> collections)
+        {
+            Scalars = scalars;
+            NestedObjects = nestedObjects;
+            Collections = collections;
+        }
+
+        public List<ScalarBinding> Scalars { get; }
+        public List<NestedObjectBinding> NestedObjects { get; }
+        public List<CollectionBinding> Collections { get; }
+    }
+
+    private static ObjectBindings ResolveBindings(JsonGenObject obj)
+    {
         var usedNames = new HashSet<string>(StringComparer.Ordinal);
+
         var scalars = new List<ScalarBinding>();
         foreach (JsonGenProperty prop in obj.Scalars)
         {
@@ -142,7 +172,15 @@ internal static class JsonModelEmitter
                 collection: coll));
         }
 
-        // 2. Backing fields.
+        return new ObjectBindings(scalars, nestedBindings, collectionBindings);
+    }
+
+    private static void EmitBackingFields(
+        StringBuilder sb,
+        ObjectBindings bindings,
+        string classIndent,
+        bool isRoot)
+    {
         if (!isRoot)
         {
             // Each nested class carries its own _ctx reference so the
@@ -151,7 +189,7 @@ internal static class JsonModelEmitter
             sb.Append(classIndent).AppendLine("private readonly string _pathPrefix;");
         }
 
-        foreach (ScalarBinding s in scalars)
+        foreach (ScalarBinding s in bindings.Scalars)
         {
             sb.AppendLine();
             if (!s.IsRequired)
@@ -162,19 +200,28 @@ internal static class JsonModelEmitter
             sb.Append(classIndent).Append("private ").Append(s.CSharpType).Append(" _").Append(s.FieldName).AppendLine(";");
         }
 
-        foreach (NestedObjectBinding n in nestedBindings)
+        foreach (NestedObjectBinding n in bindings.NestedObjects)
         {
             sb.AppendLine();
             sb.Append(classIndent).Append("private readonly ").Append(n.TypeName).Append(" _").Append(n.FieldName).AppendLine(";");
         }
 
-        foreach (CollectionBinding c in collectionBindings)
+        foreach (CollectionBinding c in bindings.Collections)
         {
             sb.AppendLine();
             sb.Append(classIndent).Append("private readonly IReadOnlyList<").Append(c.ItemTypeName).Append("> _").Append(c.FieldName).AppendLine(";");
         }
+    }
 
-        // 3. Constructor.
+    private static void EmitConstructor(
+        StringBuilder sb,
+        ObjectBindings bindings,
+        string className,
+        bool isRoot,
+        string classIndent,
+        string ctorIndent,
+        string sourceObjectVar)
+    {
         sb.AppendLine();
         if (isRoot)
         {
@@ -190,37 +237,44 @@ internal static class JsonModelEmitter
             sb.Append(ctorIndent).AppendLine("_pathPrefix = pathPrefix;");
         }
 
-        foreach (ScalarBinding s in scalars)
+        foreach (ScalarBinding s in bindings.Scalars)
         {
             EmitScalarCtorAssignment(sb, s, sourceObjectVar, ctorIndent);
         }
 
-        foreach (NestedObjectBinding n in nestedBindings)
+        foreach (NestedObjectBinding n in bindings.NestedObjects)
         {
             EmitNestedCtorAssignment(sb, n, sourceObjectVar, isRoot, ctorIndent);
         }
 
-        foreach (CollectionBinding c in collectionBindings)
+        foreach (CollectionBinding c in bindings.Collections)
         {
             EmitCollectionCtorAssignment(sb, c, sourceObjectVar, isRoot, ctorIndent);
         }
 
         sb.Append(classIndent).AppendLine("}");
+    }
 
-        // 4. Public properties.
-        foreach (ScalarBinding s in scalars)
+    private static void EmitPublicProperties(
+        StringBuilder sb,
+        ObjectBindings bindings,
+        string classIndent,
+        string ctorIndent,
+        bool isRoot)
+    {
+        foreach (ScalarBinding s in bindings.Scalars)
         {
             EmitScalarProperty(sb, s, isRoot, classIndent, ctorIndent);
         }
 
-        foreach (NestedObjectBinding n in nestedBindings)
+        foreach (NestedObjectBinding n in bindings.NestedObjects)
         {
             sb.AppendLine();
             sb.Append(classIndent).Append("public ").Append(n.TypeName).Append(' ').Append(n.PropertyName)
               .Append(" => _").Append(n.FieldName).AppendLine(";");
         }
 
-        foreach (CollectionBinding c in collectionBindings)
+        foreach (CollectionBinding c in bindings.Collections)
         {
             sb.AppendLine();
             sb.Append(classIndent).Append("public IReadOnlyList<").Append(c.ItemTypeName).Append("> ")
