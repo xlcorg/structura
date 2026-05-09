@@ -28,6 +28,15 @@
         <Content Include="..\..\src\Structura\Samples\order.sample.json"
                  CopyToOutputDirectory="PreserveNewest"
                  Link="order.sample.json" />
+        <Content Include="..\..\src\Structura\Samples\library.sample.json"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="library.sample.json" />
+        <Content Include="..\..\src\Structura\Samples\blrwbl.sample.xml"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="blrwbl.sample.xml" />
+        <Content Include="..\..\src\Structura\Samples\library.sample.xml"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="library.sample.xml" />
     </ItemGroup>
 
 </Project>

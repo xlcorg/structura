@@ -8,8 +8,7 @@ namespace Structura.Runtime;
 /// </summary>
 public sealed class StructuraDocumentContext
 {
-    private readonly TextEditList _edits = new TextEditList();
-    private readonly Dictionary<string, DocumentChange> _changesByPath = new Dictionary<string, DocumentChange>(StringComparer.Ordinal);
+    private readonly Dictionary<TextSpan, RecordedEdit> _edits = new();
 
     public StructuraDocumentContext(string originalText)
     {
@@ -19,13 +18,18 @@ public sealed class StructuraDocumentContext
 
     public string OriginalText { get; }
 
-    public bool HasChanges => _edits.HasEdits;
+    public bool HasChanges => _edits.Count > 0;
 
     public IReadOnlyList<DocumentChange> Changes
     {
         get
         {
-            var list = new List<DocumentChange>(_changesByPath.Values);
+            var list = new List<DocumentChange>(_edits.Count);
+            foreach ((TextSpan span, RecordedEdit edit) in _edits)
+            {
+                var oldText = OriginalText.Substring(span.Start, span.Length);
+                list.Add(new DocumentChange(edit.Path, span, oldText, edit.Replacement));
+            }
             list.Sort(static (a, b) => a.Span.Start.CompareTo(b.Span.Start));
             return list;
         }
@@ -35,26 +39,36 @@ public sealed class StructuraDocumentContext
     /// Records that the value at <paramref name="path"/> spanning
     /// <paramref name="originalSpan"/> in the source should be replaced with
     /// <paramref name="replacement"/>. Setting the value back to the original
-    /// text drops the edit.
+    /// text drops the edit. Two records on the same span (regardless of path)
+    /// collapse to a single entry — the latest wins.
     /// </summary>
     public void Record(string path, TextSpan originalSpan, string replacement)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(replacement);
 
-        string oldText = OriginalText.Substring(originalSpan.Start, originalSpan.Length);
+        var oldText = OriginalText.Substring(originalSpan.Start, originalSpan.Length);
         if (string.Equals(oldText, replacement, StringComparison.Ordinal))
         {
             _edits.Remove(originalSpan);
-            _changesByPath.Remove(path);
             return;
         }
-        _edits.Set(new TextEdit(originalSpan, replacement));
-        _changesByPath[path] = new DocumentChange(path, originalSpan, oldText, replacement);
+        _edits[originalSpan] = new RecordedEdit(path, replacement);
     }
 
     public string ApplyEdits()
     {
-        return _edits.Apply(OriginalText);
+        if (_edits.Count == 0)
+        {
+            return OriginalText;
+        }
+        var list = new TextEditList();
+        foreach ((TextSpan span, RecordedEdit edit) in _edits)
+        {
+            list.Set(new TextEdit(span, edit.Replacement));
+        }
+        return list.Apply(OriginalText);
     }
+
+    private readonly record struct RecordedEdit(string Path, string Replacement);
 }

@@ -5,7 +5,9 @@ namespace Structura.Runtime;
 /// <summary>
 /// Mutable, span-keyed collection of text edits over a single source document.
 /// Setting two edits with the same span keeps only the latest. Edits with
-/// different but intersecting spans are rejected at <see cref="Apply"/> time.
+/// different but intersecting spans are rejected by <see cref="Validate"/>
+/// (and consequently by <see cref="Apply"/>); <see cref="Snapshot"/> is a
+/// pure read-only view that never throws.
 /// </summary>
 public sealed class TextEditList
 {
@@ -28,25 +30,33 @@ public sealed class TextEditList
         _edits.Clear();
     }
 
+    /// <summary>
+    /// Returns the current edits sorted by <see cref="TextSpan.Start"/>.
+    /// Pure: never throws, even if edits overlap. Use <see cref="Validate"/>
+    /// to detect overlaps explicitly.
+    /// </summary>
     public IReadOnlyList<TextEdit> Snapshot()
     {
         var sorted = new List<TextEdit>(_edits.Values);
         sorted.Sort(static (a, b) => a.Span.Start.CompareTo(b.Span.Start));
-        for (var i = 1; i < sorted.Count; i++)
-        {
-            if (sorted[i - 1].Span.End > sorted[i].Span.Start)
-            {
-                throw new InvalidOperationException(
-                    $"Overlapping edits: {sorted[i - 1].Span} and {sorted[i].Span}.");
-            }
-        }
         return sorted;
+    }
+
+    /// <summary>
+    /// Throws <see cref="InvalidOperationException"/> if any two edits have
+    /// distinct but intersecting spans. Same-span overwrites are not an
+    /// overlap (they are deduplicated by <see cref="Set"/>).
+    /// </summary>
+    public void Validate()
+    {
+        EnsureNonOverlapping(Snapshot());
     }
 
     public string Apply(string source)
     {
         ArgumentNullException.ThrowIfNull(source);
         IReadOnlyList<TextEdit> sorted = Snapshot();
+        EnsureNonOverlapping(sorted);
         if (sorted.Count == 0)
         {
             return source;
@@ -67,5 +77,17 @@ public sealed class TextEditList
         }
         sb.Append(source, cursor, source.Length - cursor);
         return sb.ToString();
+    }
+
+    private static void EnsureNonOverlapping(IReadOnlyList<TextEdit> sorted)
+    {
+        for (var i = 1; i < sorted.Count; i++)
+        {
+            if (sorted[i - 1].Span.End > sorted[i].Span.Start)
+            {
+                throw new InvalidOperationException(
+                    $"Overlapping edits: {sorted[i - 1].Span} and {sorted[i].Span}.");
+            }
+        }
     }
 }

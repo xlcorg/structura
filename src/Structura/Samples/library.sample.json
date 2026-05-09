@@ -1,0 +1,51 @@
+{
+  "name": "Public Library",
+  "created": "2026-01-15",
+  "updated": null,
+  "books": [
+    {
+      "id": "B-001",
+      "title": "War and Peace",
+      "year": 1869,
+      "subtitle": "A historical novel",
+      "rating": 4.8,
+      "publisher": {
+        "name": "Russkij Vestnik",
+        "address": {
+          "city": "Moscow",
+          "country": "Russia"
+        }
+      }
+    },
+    {
+      "id": "B-002",
+      "title": "Anna Karenina",
+      "year": 1877,
+      "rating": 4.7,
+      "publisher": {
+        "name": "Russkij Vestnik",
+        "address": {
+          "city": null,
+          "country": "Russia"
+        }
+      }
+    },
+    {
+      "id": "B-003",
+      "title": "Around the World in 80 Days",
+      "year": 1872,
+      "subtitle": "Le Tour du monde en quatre-vingts jours",
+      "rating": 4.5,
+      "publisher": {
+        "name": "Hetzel",
+        "address": {
+          "city": "Paris",
+          "country": "France"
+        }
+      }
+    }
+  ],
+  "tags": ["fiction", "classic"],
+  "years": [1865, 1872],
+  "archive": []
+}

@@ -31,7 +31,11 @@
       "quantity": 1,
       "unit_price": 14999.95,
       "tags": ["electronics", "laptop"],
-      "serial_numbers": []
+      "serial_numbers": ["SN-A1B2C3"],
+      "manufacturer": {
+        "name": "Lenovo",
+        "country_code": "CN"
+      }
     },
     {
       "line_id": 2,
@@ -39,7 +43,12 @@
       "quantity": 1,
       "unit_price": 14999.95,
       "tags": ["electronics", "laptop"],
-      "serial_numbers": []
+      "serial_numbers": ["SN-D4E5F6"],
+      "note": "Replacement unit",
+      "manufacturer": {
+        "name": "GenericCo",
+        "country_code": null
+      }
     }
   ],
   "metadata": {
