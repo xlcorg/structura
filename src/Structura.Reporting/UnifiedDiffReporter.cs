@@ -66,9 +66,10 @@ public static class UnifiedDiffReporter
                 removals++;
             }
 
-            if (line.LineNumber > maxLineNumber)
+            int candidate = Math.Max(line.OldLineNumber, line.NewLineNumber);
+            if (candidate > maxLineNumber)
             {
-                maxLineNumber = line.LineNumber;
+                maxLineNumber = candidate;
             }
         }
 

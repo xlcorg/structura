@@ -32,7 +32,7 @@ internal sealed class DiffHunkBuilder
         {
             if (i > 0)
             {
-                output.Add(new DiffLine(DiffLineKind.HunkSeparator, 0, string.Empty, Array.Empty<ColumnRange>()));
+                output.Add(new DiffLine(DiffLineKind.HunkSeparator, 0, 0, string.Empty, Array.Empty<ColumnRange>()));
             }
             EmitHunk(output, hunks[i], oldLines, newLines, options.ContextLines, document.OriginalText, options.InlineHighlight);
         }
@@ -176,9 +176,12 @@ internal sealed class DiffHunkBuilder
         for (int i = preStart; i < hunk.OldStartLine; i++)
         {
             string strippedLine = StripCarriageReturn(oldLines[i]);
+            int oldLineNumber = i + 1;
+            int newLineNumber = i + 1 + preDelta;
             output.Add(new DiffLine(
                 DiffLineKind.Context,
-                i + 1 + preDelta,
+                oldLineNumber,
+                newLineNumber,
                 strippedLine,
                 Array.Empty<ColumnRange>()));
         }
@@ -198,9 +201,12 @@ internal sealed class DiffHunkBuilder
             while (oldCursor < c.OldStartLine)
             {
                 string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+                int oldLineNumber = oldCursor + 1;
+                int newLineNumber = newCursor + 1;
                 output.Add(new DiffLine(
                     DiffLineKind.Context,
-                    newCursor + 1,
+                    oldLineNumber,
+                    newLineNumber,
                     contextContent,
                     Array.Empty<ColumnRange>()));
                 oldCursor++;
@@ -217,7 +223,8 @@ internal sealed class DiffHunkBuilder
                 IReadOnlyList<ColumnRange> highlights = inlineHighlight
                     ? CollectRemovedHighlightsForLine(i, hunk.Changes, originalText, content.Length)
                     : Array.Empty<ColumnRange>();
-                output.Add(new DiffLine(DiffLineKind.Removed, i + 1, content, highlights));
+                int oldLineNumber = i + 1;
+                output.Add(new DiffLine(DiffLineKind.Removed, oldLineNumber, 0, content, highlights));
             }
             if (c.OldEndLine + 1 > oldCursor)
             {
@@ -234,7 +241,8 @@ internal sealed class DiffHunkBuilder
                 IReadOnlyList<ColumnRange> highlights = inlineHighlight
                     ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, originalText)
                     : Array.Empty<ColumnRange>();
-                output.Add(new DiffLine(DiffLineKind.Added, i + 1, content, highlights));
+                int newLineNumber = i + 1;
+                output.Add(new DiffLine(DiffLineKind.Added, 0, newLineNumber, content, highlights));
             }
             if (c.NewEndLine + 1 > newCursor)
             {
@@ -247,9 +255,12 @@ internal sealed class DiffHunkBuilder
         while (oldCursor <= hunk.OldEndLine)
         {
             string contextContent = StripCarriageReturn(oldLines[oldCursor]);
+            int oldLineNumber = oldCursor + 1;
+            int newLineNumber = newCursor + 1;
             output.Add(new DiffLine(
                 DiffLineKind.Context,
-                newCursor + 1,
+                oldLineNumber,
+                newLineNumber,
                 contextContent,
                 Array.Empty<ColumnRange>()));
             oldCursor++;
@@ -260,9 +271,12 @@ internal sealed class DiffHunkBuilder
         for (int i = hunk.OldEndLine + 1; i <= postEnd; i++)
         {
             string strippedLine = StripCarriageReturn(oldLines[i]);
+            int oldLineNumber = i + 1;
+            int newLineNumber = i + 1 + postDelta;
             output.Add(new DiffLine(
                 DiffLineKind.Context,
-                i + 1 + postDelta,
+                oldLineNumber,
+                newLineNumber,
                 strippedLine,
                 Array.Empty<ColumnRange>()));
         }
