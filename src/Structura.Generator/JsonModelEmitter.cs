@@ -39,6 +39,7 @@ internal static class JsonModelEmitter
         EmitObjectMembers(
             sb,
             obj: info.Root,
+            className: className,
             isRoot: true,
             classIndent: "    ",
             ctorIndent: "        ",
@@ -82,6 +83,7 @@ internal static class JsonModelEmitter
     private static void EmitObjectMembers(
         StringBuilder sb,
         JsonGenObject obj,
+        string className,
         bool isRoot,
         string classIndent,
         string ctorIndent,
@@ -176,13 +178,13 @@ internal static class JsonModelEmitter
         sb.AppendLine();
         if (isRoot)
         {
-            sb.Append(classIndent).Append("private ").Append(GetEnclosingClassName(sb)).AppendLine("(string source, JsonSourceObject root)");
+            sb.Append(classIndent).Append("private ").Append(className).AppendLine("(string source, JsonSourceObject root)");
             sb.Append(classIndent).AppendLine("{");
             sb.Append(ctorIndent).AppendLine("_ctx = new StructuraDocumentContext(source);");
         }
         else
         {
-            sb.Append(classIndent).Append("internal ").Append(GetEnclosingClassName(sb)).AppendLine("(StructuraDocumentContext ctx, string pathPrefix, JsonSourceObject obj)");
+            sb.Append(classIndent).Append("internal ").Append(className).AppendLine("(StructuraDocumentContext ctx, string pathPrefix, JsonSourceObject obj)");
             sb.Append(classIndent).AppendLine("{");
             sb.Append(ctorIndent).AppendLine("_ctx = ctx;");
             sb.Append(ctorIndent).AppendLine("_pathPrefix = pathPrefix;");
@@ -224,34 +226,6 @@ internal static class JsonModelEmitter
             sb.Append(classIndent).Append("public IReadOnlyList<").Append(c.ItemTypeName).Append("> ")
               .Append(c.PropertyName).Append(" => _").Append(c.FieldName).AppendLine(";");
         }
-    }
-
-    /// <summary>
-    /// The class-name token written immediately before the parenthesis of a
-    /// constructor declaration is the enclosing class. Recover it by scanning
-    /// the buffer back to the most recent <c>class</c> keyword. This avoids
-    /// threading the class name through every helper.
-    /// </summary>
-    private static string GetEnclosingClassName(StringBuilder sb)
-    {
-        var s = sb.ToString();
-        int markerEnd = s.LastIndexOf("partial class ", StringComparison.Ordinal);
-        if (markerEnd < 0)
-        {
-            return "Document";
-        }
-        int nameStart = markerEnd + "partial class ".Length;
-        int nameEnd = nameStart;
-        while (nameEnd < s.Length)
-        {
-            char c = s[nameEnd];
-            if (!char.IsLetterOrDigit(c) && c != '_')
-            {
-                break;
-            }
-            nameEnd++;
-        }
-        return s.Substring(nameStart, nameEnd - nameStart);
     }
 
     // ── Scalar bindings ──────────────────────────────────────────────────────
@@ -512,6 +486,7 @@ internal static class JsonModelEmitter
         EmitObjectMembers(
             sb,
             obj: child,
+            className: className,
             isRoot: false,
             classIndent: "        ",
             ctorIndent: "            ",
