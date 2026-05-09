@@ -34,6 +34,10 @@ Console.WriteLine("=== Diff (UnifiedDiffReporter) ===");
 UnifiedDiffReporter.Print(order);
 Console.WriteLine();
 
+Console.WriteLine("=== Diff (SideBySideDiffReporter) ===");
+SideBySideDiffReporter.Print(order);
+Console.WriteLine();
+
 // ── XML pipeline ──────────────────────────────────────────────────────────────
 
 string blrwblPath = Path.Combine(AppContext.BaseDirectory, "Samples", "blrwbl.sample.xml");
@@ -67,6 +71,10 @@ Console.WriteLine("=== BLRWBL Diff (UnifiedDiffReporter) ===");
 UnifiedDiffReporter.Print(waybill);
 Console.WriteLine();
 
+Console.WriteLine("=== BLRWBL Diff (SideBySideDiffReporter) ===");
+SideBySideDiffReporter.Print(waybill);
+Console.WriteLine();
+
 // ── Library pipeline (heterogeneous-item torture sample) ─────────────────────
 
 string libraryPath = Path.Combine(AppContext.BaseDirectory, "Samples", "library.sample.xml");
@@ -85,6 +93,10 @@ Console.WriteLine();
 
 Console.WriteLine("=== Library Diff (UnifiedDiffReporter) ===");
 UnifiedDiffReporter.Print(library);
+Console.WriteLine();
+
+Console.WriteLine("=== Library Diff (SideBySideDiffReporter) ===");
+SideBySideDiffReporter.Print(library);
 Console.WriteLine();
 
 // ── Library JSON pipeline (heterogeneous-item torture sample, JSON side) ─────
@@ -122,3 +134,8 @@ Console.WriteLine();
 
 Console.WriteLine("=== Library JSON Diff (UnifiedDiffReporter) ===");
 UnifiedDiffReporter.Print(libraryDoc);
+Console.WriteLine();
+
+Console.WriteLine("=== Library JSON Diff (SideBySideDiffReporter) ===");
+SideBySideDiffReporter.Print(libraryDoc);
+Console.WriteLine();
