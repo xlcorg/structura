@@ -24,26 +24,42 @@ so existing `TextWriter` golden tests stay green untouched.
   Claude Code-style dark palette is `internal`, leaving room for a future
   non-breaking `Palette` option.
 
+## Prerequisite refactor (separate commit, before step 13 work)
+
+`UnifiedDiffOptions` and `SideBySideDiffOptions` are field-for-field
+identical today, and `SideBySideDiffReporter.RenderTo` literally
+re-packages one into the other before calling `DiffHunkBuilder.Build`
+(see lines 70–75). Adding `SyntaxHighlight` to both would only deepen
+the duplication.
+
+**Prep step (committed separately, no new feature):**
+
+- Replace both records with one `public sealed record DiffReporterOptions`
+  carrying the existing `ContextLines`, `InlineHighlight`, `ShowFullFile`
+  fields and the same defaults.
+- Both reporters' `Print(...)` overloads accept `DiffReporterOptions`.
+- `DiffHunkBuilder.Build` accepts `DiffReporterOptions` directly; the
+  re-packaging block in `SideBySideDiffReporter` is deleted.
+- All call sites (`Program.cs`, every `tests/...` reference) migrate by
+  rename. No external callers exist.
+
+After the prep commit, step 13 adds `SyntaxHighlight` to a single record.
+
 ## Public API surface
 
 ```csharp
-public sealed record UnifiedDiffOptions
+public sealed record DiffReporterOptions
 {
     public int  ContextLines    { get; init; } = 3;
     public bool InlineHighlight { get; init; } = true;
-    public bool SyntaxHighlight { get; init; } = true;   // NEW
+    public bool SyntaxHighlight { get; init; } = true;   // NEW (step 13)
     public bool ShowFullFile    { get; init; } = false;
-}
-
-public sealed record SideBySideDiffOptions
-{
-    /* … existing fields … */
-    public bool SyntaxHighlight { get; init; } = true;   // NEW
 }
 ```
 
-No new public types. Both reporters keep their existing `Print` overloads
-unchanged.
+No new public types beyond `DiffReporterOptions`. Both reporters keep
+their existing `Print` overload shapes; only the options-record type
+name changes.
 
 ## Architecture (Approach A — paint at render time)
 
@@ -51,8 +67,7 @@ unchanged.
 Structura.Reporting
 ├── UnifiedDiffReporter.cs           (resolve painter, pass to renderer)
 ├── SideBySideDiffReporter.cs        (resolve painter, pass to renderer)
-├── UnifiedDiffOptions.cs            (+ SyntaxHighlight)
-├── SideBySideDiffOptions.cs         (+ SyntaxHighlight)
+├── DiffReporterOptions.cs           (+ SyntaxHighlight; merged in prep)
 └── Internal/
     ├── AnsiPalette.cs               (unchanged)
     ├── DiffLineRenderer.cs          (accepts IDiffSyntaxPainter)
