@@ -25,9 +25,9 @@ internal sealed class JsonLinePainter : IDiffSyntaxPainter
         var i = 0;
         while (i < content.Length)
         {
-            int tokenStart = i;
-            TokenKind kind = ScanNext(content, ref i);
-            int tokenLength = i - tokenStart;
+            var tokenStart = i;
+            var kind = ScanNext(content, ref i);
+            var tokenLength = i - tokenStart;
             AppendToken(tokens, tokenStart, tokenLength, kind);
         }
         return tokens;
@@ -183,10 +183,14 @@ internal sealed class JsonLinePainter : IDiffSyntaxPainter
             TokenRange last = tokens[^1];
             if (last.Kind == kind && last.Range.End == start)
             {
-                tokens[^1] = new TokenRange(new ColumnRange(last.Range.Start, last.Range.Length + length), kind);
+                var coalescedRange = new ColumnRange(last.Range.Start, last.Range.Length + length);
+                var coalesced = new TokenRange(coalescedRange, kind);
+                tokens[^1] = coalesced;
                 return;
             }
         }
-        tokens.Add(new TokenRange(new ColumnRange(start, length), kind));
+        var range = new ColumnRange(start, length);
+        var token = new TokenRange(range, kind);
+        tokens.Add(token);
     }
 }
