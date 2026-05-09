@@ -27,7 +27,7 @@ public sealed class SmallOrderXml : IStructuraXmlDocument<SmallOrderXml>, IStruc
 
     private SmallOrderXml(string source, XmlSourceElement root)
     {
-        _ctx = new StructuraDocumentContext(source, "small-order.xml");
+        _ctx = new StructuraDocumentContext(source, SourceFileName);
 
         XmlSourceElement currency = root.RequireElement("currency");
         _currencyValueSpan = currency.InnerSpan;

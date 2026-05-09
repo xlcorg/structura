@@ -29,7 +29,7 @@ public sealed class SmallOrder : IStructuraJsonDocument<SmallOrder>, IStructuraD
 
     private SmallOrder(string source, JsonSourceObject root)
     {
-        _ctx = new StructuraDocumentContext(source, "small-order.json");
+        _ctx = new StructuraDocumentContext(source, SourceFileName);
 
         var currency = (JsonSourceString)root.RequireProperty("currency").Value;
         _currencyValueSpan = currency.Span;

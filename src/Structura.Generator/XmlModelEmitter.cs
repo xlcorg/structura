@@ -46,6 +46,7 @@ internal static class XmlModelEmitter
         sb.Append("    public static string SourceFileName => ")
           .Append(sourceFileNameLiteral)
           .AppendLine(";");
+        sb.AppendLine();
 
         var usedRootNames = new HashSet<string>(StringComparer.Ordinal);
         var rootScalars = new List<RootScalar>();
