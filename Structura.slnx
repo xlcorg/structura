@@ -6,6 +6,12 @@
     <File Path="Directory.Build.targets" />
     <File Path="Directory.Packages.props" />
   </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/plans/step-10-xml-nested-generation.md" />
+    <File Path="docs/plans/step-11-unified-diff-reporter.md" />
+    <File Path="docs/plans/step-12-side-by-side-diff-reporter.md" />
+    <File Path="docs/plans/step-13-reporter-syntax-highlighting.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Structura.Common/Structura.Common.csproj" />
     <Project Path="src/Structura.Generator/Structura.Generator.csproj" />
