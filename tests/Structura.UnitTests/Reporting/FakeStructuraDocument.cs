@@ -21,7 +21,9 @@ internal sealed class FakeStructuraDocument : IStructuraDocument
 
     public string OriginalText { get; }
 
-    public string CurrentText => OriginalText;
+    public string? CurrentTextOverride { get; init; }
+
+    public string CurrentText => CurrentTextOverride ?? OriginalText;
 
     public string DocumentName { get; }
 

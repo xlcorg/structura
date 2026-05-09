@@ -1,0 +1,290 @@
+using Structura.Runtime;
+
+namespace Structura.Reporting.Internal;
+
+/// <summary>
+/// Builds the ordered list of <see cref="DiffLine"/> entries that
+/// <see cref="UnifiedDiffReporter"/> renders. Groups changes whose old-line
+/// ranges fall within <c>2 * ContextLines</c> of each other into a single
+/// hunk, separated by <see cref="DiffLineKind.HunkSeparator"/>.
+/// </summary>
+internal sealed class DiffHunkBuilder
+{
+    public IReadOnlyList<DiffLine> Build(IStructuraDocument document, UnifiedDiffOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(options);
+
+        IReadOnlyList<DocumentChange> changes = document.Changes;
+        if (changes.Count == 0)
+        {
+            return Array.Empty<DiffLine>();
+        }
+
+        string[] oldLines = SplitLines(document.OriginalText);
+        string[] newLines = SplitLines(document.CurrentText);
+
+        List<ChangeRange> ranges = MapChangesToLineRanges(document.OriginalText, changes);
+        List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines, oldLines.Length);
+
+        var output = new List<DiffLine>();
+        for (var i = 0; i < hunks.Count; i++)
+        {
+            if (i > 0)
+            {
+                output.Add(new DiffLine(DiffLineKind.HunkSeparator, 0, string.Empty, Array.Empty<ColumnRange>()));
+            }
+            EmitHunk(output, hunks[i], oldLines, newLines, options.ContextLines, ranges, document.OriginalText, options.InlineHighlight);
+        }
+
+        return output;
+    }
+
+    private static string[] SplitLines(string text) =>
+        text.Split('\n');
+
+    private readonly record struct ChangeRange(
+        int OldStartLine,   // 0-based
+        int OldEndLine,     // 0-based inclusive
+        int NewStartLine,
+        int NewEndLine,
+        DocumentChange Change);
+
+    private readonly record struct HunkRange(
+        int OldStartLine,
+        int OldEndLine,
+        int NewStartLine,
+        int NewEndLine,
+        List<ChangeRange> Changes);
+
+    private static List<ChangeRange> MapChangesToLineRanges(string originalText, IReadOnlyList<DocumentChange> changes)
+    {
+        var result = new List<ChangeRange>(changes.Count);
+        int cumulativeLineDelta = 0;
+        foreach (DocumentChange c in changes)
+        {
+            int oldStart = LineOf(originalText, c.Span.Start);
+            int oldEnd = c.Span.Length == 0
+                ? oldStart
+                : LineOf(originalText, c.Span.End - 1);
+            int oldLineCount = oldEnd - oldStart + 1;
+            int newLineCount = CountLineBreaks(c.NewText) + 1;
+
+            int newStart = oldStart + cumulativeLineDelta;
+            int newEnd = newStart + newLineCount - 1;
+            result.Add(new ChangeRange(oldStart, oldEnd, newStart, newEnd, c));
+
+            cumulativeLineDelta += newLineCount - oldLineCount;
+        }
+        return result;
+    }
+
+    private static int LineOf(string text, int offset)
+    {
+        var line = 0;
+        for (var i = 0; i < offset && i < text.Length; i++)
+        {
+            if (text[i] == '\n')
+            {
+                line++;
+            }
+        }
+        return line;
+    }
+
+    private static int CountLineBreaks(string text)
+    {
+        var n = 0;
+        foreach (char ch in text)
+        {
+            if (ch == '\n')
+            {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private static List<HunkRange> GroupIntoHunks(List<ChangeRange> ranges, int contextLines, int oldLinesTotal)
+    {
+        var hunks = new List<HunkRange>();
+        if (ranges.Count == 0)
+        {
+            return hunks;
+        }
+
+        int gap = 2 * contextLines;
+        var current = new List<ChangeRange> { ranges[0] };
+        for (var i = 1; i < ranges.Count; i++)
+        {
+            ChangeRange prev = current[^1];
+            ChangeRange next = ranges[i];
+            if (next.OldStartLine - prev.OldEndLine <= gap)
+            {
+                current.Add(next);
+            }
+            else
+            {
+                hunks.Add(MakeHunkRange(current));
+                current = new List<ChangeRange> { next };
+            }
+        }
+        hunks.Add(MakeHunkRange(current));
+        return hunks;
+    }
+
+    private static HunkRange MakeHunkRange(List<ChangeRange> group)
+    {
+        int oldStart = int.MaxValue, oldEnd = int.MinValue;
+        int newStart = int.MaxValue, newEnd = int.MinValue;
+        foreach (ChangeRange r in group)
+        {
+            if (r.OldStartLine < oldStart) oldStart = r.OldStartLine;
+            if (r.OldEndLine > oldEnd) oldEnd = r.OldEndLine;
+            if (r.NewStartLine < newStart) newStart = r.NewStartLine;
+            if (r.NewEndLine > newEnd) newEnd = r.NewEndLine;
+        }
+        return new HunkRange(oldStart, oldEnd, newStart, newEnd, group);
+    }
+
+    private static void EmitHunk(
+        List<DiffLine> output,
+        HunkRange hunk,
+        string[] oldLines,
+        string[] newLines,
+        int contextLines,
+        List<ChangeRange> allRanges,
+        string originalText,
+        bool inlineHighlight)
+    {
+        int preStart = Math.Max(0, hunk.OldStartLine - contextLines);
+        int postEnd = Math.Min(oldLines.Length - 1, hunk.OldEndLine + contextLines);
+
+        int preDelta = hunk.NewStartLine - hunk.OldStartLine;
+        for (int i = preStart; i < hunk.OldStartLine; i++)
+        {
+            string strippedLine = StripCarriageReturn(oldLines[i]);
+            output.Add(new DiffLine(
+                DiffLineKind.Context,
+                i + 1 + preDelta,
+                strippedLine,
+                Array.Empty<ColumnRange>()));
+        }
+
+        for (int i = hunk.OldStartLine; i <= hunk.OldEndLine; i++)
+        {
+            string content = StripCarriageReturn(oldLines[i]);
+            IReadOnlyList<ColumnRange> highlights = inlineHighlight
+                ? CollectRemovedHighlightsForLine(i, hunk.Changes, originalText, content.Length)
+                : Array.Empty<ColumnRange>();
+            output.Add(new DiffLine(DiffLineKind.Removed, i + 1, content, highlights));
+        }
+
+        for (int i = hunk.NewStartLine; i <= hunk.NewEndLine; i++)
+        {
+            string content = StripCarriageReturn(newLines[i]);
+            IReadOnlyList<ColumnRange> highlights = inlineHighlight
+                ? CollectAddedHighlightsForLine(i, hunk.Changes, content.Length, originalText)
+                : Array.Empty<ColumnRange>();
+            output.Add(new DiffLine(DiffLineKind.Added, i + 1, content, highlights));
+        }
+
+        int postDelta = hunk.NewEndLine - hunk.OldEndLine;
+        for (int i = hunk.OldEndLine + 1; i <= postEnd; i++)
+        {
+            string strippedLine = StripCarriageReturn(oldLines[i]);
+            output.Add(new DiffLine(
+                DiffLineKind.Context,
+                i + 1 + postDelta,
+                strippedLine,
+                Array.Empty<ColumnRange>()));
+        }
+    }
+
+    private static string StripCarriageReturn(string line) =>
+        line.EndsWith("\r", StringComparison.Ordinal) ? line[..^1] : line;
+
+    private static IReadOnlyList<ColumnRange> CollectRemovedHighlightsForLine(
+        int oldLineIndex,
+        List<ChangeRange> changes,
+        string originalText,
+        int contentLength)
+    {
+        var ranges = new List<ColumnRange>();
+        foreach (ChangeRange c in changes)
+        {
+            if (oldLineIndex < c.OldStartLine || oldLineIndex > c.OldEndLine)
+            {
+                continue;
+            }
+
+            int lineStart = LineStartOffset(originalText, oldLineIndex);
+            int colStart = oldLineIndex == c.OldStartLine ? c.Change.Span.Start - lineStart : 0;
+            int colEnd = oldLineIndex == c.OldEndLine
+                ? c.Change.Span.End - LineStartOffset(originalText, oldLineIndex)
+                : contentLength;
+            int clampedStart = Math.Clamp(colStart, 0, contentLength);
+            int clampedEnd = Math.Clamp(colEnd, 0, contentLength);
+            if (clampedEnd > clampedStart)
+            {
+                ranges.Add(new ColumnRange(clampedStart, clampedEnd - clampedStart));
+            }
+        }
+        return ranges;
+    }
+
+    private static IReadOnlyList<ColumnRange> CollectAddedHighlightsForLine(
+        int newLineIndex,
+        List<ChangeRange> changes,
+        int contentLength,
+        string originalText)
+    {
+        var ranges = new List<ColumnRange>();
+        foreach (ChangeRange c in changes)
+        {
+            if (newLineIndex < c.NewStartLine || newLineIndex > c.NewEndLine)
+            {
+                continue;
+            }
+
+            if (c.NewStartLine == c.NewEndLine && c.OldStartLine == c.OldEndLine)
+            {
+                int oldLineStart = LineStartOffset(originalText, c.OldStartLine);
+                int colStart = c.Change.Span.Start - oldLineStart;
+                int len = c.Change.NewText.Length;
+                int clampedStart = Math.Clamp(colStart, 0, contentLength);
+                int clampedEnd = Math.Clamp(colStart + len, 0, contentLength);
+                if (clampedEnd > clampedStart)
+                {
+                    ranges.Add(new ColumnRange(clampedStart, clampedEnd - clampedStart));
+                }
+            }
+            else
+            {
+                ranges.Add(new ColumnRange(0, contentLength));
+            }
+        }
+        return ranges;
+    }
+
+    private static int LineStartOffset(string text, int lineIndex)
+    {
+        if (lineIndex <= 0)
+        {
+            return 0;
+        }
+        var seen = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\n')
+            {
+                seen++;
+                if (seen == lineIndex)
+                {
+                    return i + 1;
+                }
+            }
+        }
+        return text.Length;
+    }
+}
