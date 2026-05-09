@@ -138,24 +138,29 @@ internal static class PainterFactory
         {
             return NullPainter.Instance;
         }
-        if (doc is IStructuraJsonDocument)
+        IDiffSyntaxPainter? byName = ByDocumentName(doc.DocumentName);
+        if (byName is not null)
         {
-            return JsonLinePainter.Instance;
-        }
-        if (doc is IStructuraXmlDocument)
-        {
-            return XmlLinePainter.Instance;
+            return byName;
         }
         return SniffByFirstChar(doc.OriginalText);
     }
 }
 ```
 
-`SniffByFirstChar` skips Unicode whitespace, returns `JsonLinePainter` for
-`{` or `[`, `XmlLinePainter` for `<`, `NullPainter` otherwise. The sniff is
-the fallback path; in the current codebase every document implements one of
-the two interfaces, so the sniff is reached only by future formats or
-test doubles.
+`ByDocumentName` returns `JsonLinePainter` if `DocumentName` ends with
+`.json` (case-insensitive), `XmlLinePainter` if it ends with `.xml`,
+otherwise `null`. `SniffByFirstChar` skips Unicode whitespace, returns
+`JsonLinePainter` for `{` or `[`, `XmlLinePainter` for `<`, `NullPainter`
+otherwise.
+
+Why `DocumentName` instead of an interface check: the existing
+`IStructuraJsonDocument<TSelf>` and `IStructuraXmlDocument<TSelf>`
+interfaces are generic with `static abstract` members and cannot be
+used in `is`-pattern dispatch. `DocumentName` is the codegen-baked
+source filename (`order.sample.json`, `library.sample.xml`, …) and
+is reliable for every document in the project; the sniff is the fallback
+for synthetic test docs that pass `documentName: "anything"`.
 
 Both reporter `RenderTo` methods resolve the painter once at the top of the
 method, before any line is emitted, and pass it down. `useColor=false`
