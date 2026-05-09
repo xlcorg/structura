@@ -91,9 +91,9 @@ internal static class SideBySideRowRenderer
         var clipped = new List<TokenRange>(tokens.Count);
         foreach (TokenRange t in tokens)
         {
-            int clippedStart = Math.Min(t.Range.Start, visibleEnd);
-            int clippedEnd = Math.Min(t.Range.End, visibleEnd);
-            int len = clippedEnd - clippedStart;
+            var clippedStart = Math.Min(t.Range.Start, visibleEnd);
+            var clippedEnd = Math.Min(t.Range.End, visibleEnd);
+            var len = clippedEnd - clippedStart;
             if (len > 0)
             {
                 var clippedRange = new ColumnRange(clippedStart, len);
@@ -171,24 +171,24 @@ internal static class SideBySideRowRenderer
         string highlightBg,
         bool useDimPalette)
     {
-        TokenKind activeTokenKind = TokenKind.Punctuation;
-        string activeFg = string.Empty;
-        bool inHighlight = false;
+        var activeTokenKind = TokenKind.Punctuation;
+        var activeFg = string.Empty;
+        var inHighlight = false;
         var tokenIndex = 0;
         var highlightIndex = 0;
 
         for (var col = 0; col < t.Visible.Length; col++)
         {
-            bool insideContent = col < t.VisibleContentLength;
+            var insideContent = col < t.VisibleContentLength;
 
             while (insideContent && tokenIndex < tokens.Count && tokens[tokenIndex].Range.End <= col)
             {
                 tokenIndex++;
             }
-            TokenKind kindAtCol = insideContent && tokenIndex < tokens.Count && tokens[tokenIndex].Range.Start <= col
+            var kindAtCol = insideContent && tokenIndex < tokens.Count && tokens[tokenIndex].Range.Start <= col
                 ? tokens[tokenIndex].Kind
                 : TokenKind.Punctuation;
-            string fgAtCol = !insideContent
+            var fgAtCol = !insideContent
                 ? string.Empty
                 : (useDimPalette ? SyntaxPalette.Dim(kindAtCol) : SyntaxPalette.Bright(kindAtCol));
 
@@ -196,7 +196,7 @@ internal static class SideBySideRowRenderer
             {
                 highlightIndex++;
             }
-            bool inHighlightAtCol = insideContent && highlightIndex < highlights.Count && highlights[highlightIndex].Start <= col;
+            var inHighlightAtCol = insideContent && highlightIndex < highlights.Count && highlights[highlightIndex].Start <= col;
 
             if (col == 0 || kindAtCol != activeTokenKind || fgAtCol != activeFg)
             {
