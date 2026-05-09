@@ -86,6 +86,34 @@ public sealed class DiffLineRendererTests
     }
 
     [Fact]
+    public void Render_ContextLine_Color_DimsGutterButNotContent()
+    {
+        var line = new DiffLine(DiffLineKind.Context, 7, "  \"x\": 1,", System.Array.Empty<ColumnRange>());
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+
+        s.Should().StartWith(AnsiPalette.Dim);
+        s.Should().Contain(AnsiPalette.DimOff);
+        int dimOffIdx = s.IndexOf(AnsiPalette.DimOff, System.StringComparison.Ordinal);
+        string afterDim = s[(dimOffIdx + AnsiPalette.DimOff.Length)..];
+        afterDim.Should().Be("  \"x\": 1,");
+    }
+
+    [Fact]
+    public void Render_AddedLine_InlineHighlight_BoldsHighlightedSegment()
+    {
+        var ranges = new[] { new ColumnRange(7, 1) };
+        var line = new DiffLine(DiffLineKind.Added, 7, "  \"x\": 1,", ranges);
+
+        string s = DiffLineRenderer.Render(line, gutterWidth: 3, useColor: true, useUnicode: true);
+
+        int hiIdx = s.IndexOf(AnsiPalette.BgAddedHi, System.StringComparison.Ordinal);
+        int boldIdx = s.IndexOf(AnsiPalette.Bold, System.StringComparison.Ordinal);
+        boldIdx.Should().BeGreaterThan(hiIdx);
+        s.Should().Contain(AnsiPalette.BoldOff);
+    }
+
+    [Fact]
     public void Render_AddedLine_TwoNonOverlappingHighlights_BothEmbedded()
     {
         // content "ab cd ef" — highlight "ab" at [0,2) and "ef" at [6,2).

@@ -28,9 +28,14 @@ internal static class DiffLineRenderer
         string gutter = line.LineNumber.ToString().PadLeft(gutterWidth);
         string body = $"{gutter} {sigil} {line.Content}";
 
-        if (!useColor || line.Kind == DiffLineKind.Context)
+        if (!useColor)
         {
             return body;
+        }
+
+        if (line.Kind == DiffLineKind.Context)
+        {
+            return AnsiPalette.Dim + gutter + " " + sigil + " " + AnsiPalette.DimOff + line.Content;
         }
 
         string rowBg = line.Kind == DiffLineKind.Removed
@@ -62,10 +67,12 @@ internal static class DiffLineRenderer
                 sb.Append(line.Content, cursor, leadLen);
             }
             sb.Append(highlightBg);
+            sb.Append(AnsiPalette.Bold);
             int contentRemainder = line.Content.Length - r.Start;
             int rawLen = Math.Min(r.Length, contentRemainder);
             int len = Math.Max(0, rawLen);
             sb.Append(line.Content, r.Start, len);
+            sb.Append(AnsiPalette.BoldOff);
             sb.Append(rowBg);
             cursor = r.End;
         }
