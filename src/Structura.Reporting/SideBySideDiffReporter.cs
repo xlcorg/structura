@@ -24,7 +24,7 @@ public static class SideBySideDiffReporter
     // Minimum visible content characters per side before truncation kicks in.
     private const int MinContentPerSide = 1;
 
-    private static readonly DiffReporterOptions DefaultOptions = new();
+    private static readonly DiffReporterOptions DefaultOptions = new DiffReporterOptions();
 
     public static void Print(IStructuraDocument document)
     {

@@ -118,7 +118,7 @@ public sealed class RepeatedElementsTests
         string source = GetGeneratedSource("catalog.xml", src);
 
         source.Should().Contain("IReadOnlyList<string> Genres");
-        source.Should().Contain("long Version");
+        source.Should().Contain("string Version");
         // Pure-text-leaf: no item class is emitted.
         source.Should().NotContain("class Genre");
     }
@@ -138,8 +138,8 @@ public sealed class RepeatedElementsTests
         source.Should().Contain("class Order");
         source.Should().Contain("class Line");
         source.Should().Contain("IReadOnlyList<Line> Lines");
-        source.Should().Contain("long Id");
-        source.Should().Contain("long Qty");
+        source.Should().Contain("string Id");
+        source.Should().Contain("string Qty");
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public sealed class RepeatedElementsTests
         const string src = "<root><version>1</version><empty></empty></root>";
         string source = GetGeneratedSource("e.xml", src);
 
-        source.Should().Contain("long Version");
+        source.Should().Contain("string Version");
         source.Should().NotContain("class Empty");
         source.Should().NotContain("IReadOnlyList<Empty>");
         source.Should().NotContain("IReadOnlyList<string> Empty");
@@ -205,7 +205,7 @@ public sealed class RepeatedElementsTests
         string source = GetGeneratedSource("h.xml", src);
 
         source.Should().Contain("class Item");
-        source.Should().Contain("long Id");
+        source.Should().Contain("string Id");
         source.Should().Contain("string Extra");
         source.Should().Contain("_extraIsPresent");
         source.Should().Contain("StructuraMutationException");

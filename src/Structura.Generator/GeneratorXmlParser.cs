@@ -721,7 +721,7 @@ internal static class GeneratorXmlParser
             p++;
             if (!hasNonXmlnsAttr)
             {
-                result.PureTextScalar = new XmlGenProperty(name, XmlGenScalarKind.String, isAttribute: false);
+                result.PureTextScalar = new XmlGenProperty(name, isAttribute: false);
             }
             return result;
         }
@@ -794,8 +794,8 @@ internal static class GeneratorXmlParser
         if (!hasNonXmlnsAttr && !sawNested)
         {
             string rawText = xml.Substring(contentStart, contentEnd - contentStart);
-            string decoded = DecodeEntities(rawText, obs);
-            result.PureTextScalar = new XmlGenProperty(name, InferKind(decoded), isAttribute: false);
+            _ = DecodeEntities(rawText, obs);
+            result.PureTextScalar = new XmlGenProperty(name, isAttribute: false);
         }
         return result;
     }
@@ -832,12 +832,12 @@ internal static class GeneratorXmlParser
         }
         string raw = xml.Substring(valStart, valEnd - valStart);
         p = valEnd + 1;
-        string decoded = DecodeEntities(raw, obs);
+        _ = DecodeEntities(raw, obs);
         if (IsXmlnsAttribute(name))
         {
             obs.SawNamespaceDecl = true;
         }
-        return new XmlGenProperty(name, InferKind(decoded), isAttribute: true);
+        return new XmlGenProperty(name, isAttribute: true);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -1067,27 +1067,4 @@ internal static class GeneratorXmlParser
         return sb.ToString();
     }
 
-    private static XmlGenScalarKind InferKind(string text)
-    {
-        string trimmed = text.Trim();
-        if (trimmed.Length == 0)
-        {
-            return XmlGenScalarKind.String;
-        }
-        if (string.Equals(trimmed, "true", StringComparison.Ordinal)
-            || string.Equals(trimmed, "false", StringComparison.Ordinal))
-        {
-            return XmlGenScalarKind.Boolean;
-        }
-        if (long.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
-        {
-            return XmlGenScalarKind.Long;
-        }
-        if (trimmed.IndexOf('.') >= 0
-            && decimal.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-        {
-            return XmlGenScalarKind.Decimal;
-        }
-        return XmlGenScalarKind.String;
-    }
 }

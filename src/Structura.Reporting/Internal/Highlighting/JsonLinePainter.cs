@@ -10,7 +10,7 @@ namespace Structura.Reporting.Internal.Highlighting;
 /// </summary>
 internal sealed class JsonLinePainter : IDiffSyntaxPainter
 {
-    public static readonly JsonLinePainter Instance = new();
+    public static readonly JsonLinePainter Instance = new JsonLinePainter();
 
     private JsonLinePainter() { }
 

@@ -13,7 +13,7 @@ namespace Structura.Reporting;
 /// </summary>
 public static class UnifiedDiffReporter
 {
-    private static readonly DiffReporterOptions DefaultOptions = new();
+    private static readonly DiffReporterOptions DefaultOptions = new DiffReporterOptions();
 
     public static void Print(IStructuraDocument document)
     {

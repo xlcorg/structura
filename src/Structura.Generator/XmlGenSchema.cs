@@ -2,29 +2,17 @@ using System.Collections.Generic;
 
 namespace Structura.Generator;
 
-// ── Property kind discriminated union ────────────────────────────────────────
-
-internal enum XmlGenScalarKind
-{
-    String,
-    Long,
-    Decimal,
-    Boolean,
-}
-
 // ── Scalar property ──────────────────────────────────────────────────────────
 
 internal sealed class XmlGenProperty
 {
-    public XmlGenProperty(string name, XmlGenScalarKind kind, bool isAttribute)
+    public XmlGenProperty(string name, bool isAttribute)
     {
         Name = name;
-        Kind = kind;
         IsAttribute = isAttribute;
     }
 
     public string Name { get; }
-    public XmlGenScalarKind Kind { get; }
     public bool IsAttribute { get; }
 }
 

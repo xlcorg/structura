@@ -33,7 +33,7 @@ public sealed class LibrarySampleParseTests
     {
         var library = LoadSample().ParseXml<LibrarySampleXml>();
 
-        library.Version.Should().Be(2.1m);
+        library.Version.Should().Be("2.1");
         library.Created.Should().Be("2026-05-07");
     }
 

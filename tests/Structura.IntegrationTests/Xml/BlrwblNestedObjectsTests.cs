@@ -29,7 +29,7 @@ public sealed class BlrwblNestedObjectsTests
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
         doc.Document.DocumentID.Should().Be("234/20012");
-        doc.Document.DocumentDate.Should().Be(20150113);
+        doc.Document.DocumentDate.Should().Be("20150113");
         doc.Document.DocumentName.Should().Be("Опись содержимого контейнера");
     }
 
@@ -38,9 +38,9 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.Shipper.GLN.Should().Be(4810987000544L);
+        doc.Shipper.GLN.Should().Be("4810987000544");
         doc.Shipper.Name.Should().Be("ОАО «Минский завод»");
-        doc.Shipper.VATRegistrationNumber.Should().Be(788888855L);
+        doc.Shipper.VATRegistrationNumber.Should().Be("788888855");
         doc.Shipper.Contact.Should().Be("Директор Иванов И.И.");
     }
 
@@ -49,9 +49,9 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.Receiver.GLN.Should().Be(4810117000635L);
+        doc.Receiver.GLN.Should().Be("4810117000635");
         doc.Receiver.Name.Should().Be("ОАО «Улыбка»");
-        doc.Receiver.VATRegistrationNumber.Should().Be(666777755L);
+        doc.Receiver.VATRegistrationNumber.Should().Be("666777755");
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.FreightPayer.GLN.Should().Be(4812409900009L);
+        doc.FreightPayer.GLN.Should().Be("4812409900009");
         doc.FreightPayer.Name.Should().Be("ОАО «Известный Поставщик»");
     }
 
@@ -68,7 +68,7 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.ShipFrom.GLN.Should().Be(4810989000009L);
+        doc.ShipFrom.GLN.Should().Be("4810989000009");
         doc.ShipFrom.Contact.Should().Be("Заведующий складом Петров И. И.");
     }
 
@@ -77,7 +77,7 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.ShipTo.GLN.Should().Be(4810047000002L);
+        doc.ShipTo.GLN.Should().Be("4810047000002");
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.Transporter.GLN.Should().Be(4812409900009L);
+        doc.Transporter.GLN.Should().Be("4812409900009");
         doc.Transporter.Name.Should().Be("ООО «Перевозки»");
     }
 
@@ -96,7 +96,7 @@ public sealed class BlrwblNestedObjectsTests
 
         doc.Carrier.TransportContact.Should().Be("Сидоров И. И.");
         doc.Carrier.ProxyID.Should().Be("22-2012");
-        doc.Carrier.QuantityTrip.Should().Be(3);
+        doc.Carrier.QuantityTrip.Should().Be("3");
         doc.Carrier.TransportID.Should().Be("BMW, TP 0524-7");
     }
 
@@ -105,9 +105,9 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.Total.TotalAmount.Should().Be(600.00m);
-        doc.Total.TotalLineItem.Should().Be(10L);
-        doc.Total.TotalGrossWeight.Should().Be(1.02m);
+        doc.Total.TotalAmount.Should().Be("600.00");
+        doc.Total.TotalLineItem.Should().Be("10");
+        doc.Total.TotalGrossWeight.Should().Be("1.02");
     }
 
     // ── Mutate scalars inside nested objects ─────────────────────────────────
@@ -116,7 +116,7 @@ public sealed class BlrwblNestedObjectsTests
     public void MutatingNestedScalar_PathUsesNestedPrefix()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        doc.Shipper.GLN = 9999988880001L;
+        doc.Shipper.GLN = "9999988880001";
 
         DocumentChange change = ((IStructuraDocument)doc).Changes.Single();
         change.Path.Should().Be("/Shipper/GLN");
@@ -125,10 +125,10 @@ public sealed class BlrwblNestedObjectsTests
     }
 
     [Fact]
-    public void MutatingNestedDecimal_FormatsInvariant()
+    public void MutatingNestedScalar_WritesValueVerbatim()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        doc.Total.TotalAmount = 700.00m;
+        doc.Total.TotalAmount = "700.00";
 
         string modified = doc.ToXml();
         modified.Should().Contain("<TotalAmount>700.00</TotalAmount>");
@@ -140,9 +140,9 @@ public sealed class BlrwblNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
 
-        doc.Total.TotalAmount = 700.00m;
+        doc.Total.TotalAmount = "700.00";
         doc.Document.DocumentID = "X-001";
-        doc.Shipper.GLN = 9999988880001L;
+        doc.Shipper.GLN = "9999988880001";
 
         // Document precedes Shipper precedes Total in the source.
         IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)doc).Changes;

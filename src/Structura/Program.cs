@@ -51,16 +51,16 @@ string blrwblXml = blrwblPath.ReadAllText();
 var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 
 waybill.Currency = "USD";
-waybill.SealID = 99999;
+waybill.SealID = "99999";
 waybill.Document.DocumentID = "X-001";
-waybill.Shipper.GLN = 9999988880001L;
-waybill.Total.TotalAmount = 700.00m;
+waybill.Shipper.GLN = "9999988880001";
+waybill.Total.TotalAmount = "700.00";
 
 foreach (BlrwblSampleXml.LineItem lineItem in waybill.DespatchAdviceLogisticUnitLineItem.LineItems)
 {
-    if (lineItem.LineItemNumber == 2)
+    if (lineItem.LineItemNumber == "2")
     {
-        lineItem.LineItemNumber = 42;
+        lineItem.LineItemNumber = "42";
     }
 
     Console.WriteLine($"{lineItem.LineItemNumber}. {lineItem.LineItemName}");

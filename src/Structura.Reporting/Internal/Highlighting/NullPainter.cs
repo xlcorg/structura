@@ -7,7 +7,7 @@ namespace Structura.Reporting.Internal.Highlighting;
 /// </summary>
 internal sealed class NullPainter : IDiffSyntaxPainter
 {
-    public static readonly NullPainter Instance = new();
+    public static readonly NullPainter Instance = new NullPainter();
 
     private NullPainter() { }
 

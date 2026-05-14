@@ -29,7 +29,7 @@ public sealed class LibraryXmlNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<LibrarySampleXml>();
 
-        doc.MetaInfo.MetaTotalItems.Should().Be(5);
+        doc.MetaInfo.MetaTotalItems.Should().Be("5");
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class LibraryXmlNestedObjectsTests
         string source = LoadSample();
         var doc = source.ParseXml<LibrarySampleXml>();
 
-        doc.MetaInfo.MetaTotalItems = 99;
+        doc.MetaInfo.MetaTotalItems = "99";
         string modified = doc.ToXml();
 
         modified.Should().Contain("<meta:total-items>99</meta:total-items>");
@@ -50,8 +50,8 @@ public sealed class LibraryXmlNestedObjectsTests
     {
         var doc = LoadSample().ParseXml<LibrarySampleXml>();
 
-        doc.Statistics.Total.Should().Be(5);
-        doc.Statistics.Available.Should().Be(3);
+        doc.Statistics.Total.Should().Be("5");
+        doc.Statistics.Available.Should().Be("3");
         doc.Statistics.Currencies.Should().Be("RUB,USD,JPY,EUR");
     }
 
@@ -101,9 +101,9 @@ public sealed class LibraryXmlNestedObjectsTests
 
         b005Reviews.Should().HaveCount(2);
         b005Reviews[0].Reviewer.Name.Should().Be("Иван Петров");
-        b005Reviews[0].Reviewer.Verified.Should().BeTrue();
+        b005Reviews[0].Reviewer.Verified.Should().Be("true");
         b005Reviews[1].Reviewer.Name.Should().Be("Anna Smith");
-        b005Reviews[1].Reviewer.Verified.Should().BeFalse();
+        b005Reviews[1].Reviewer.Verified.Should().Be("false");
     }
 
     [Fact]

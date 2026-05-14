@@ -8,7 +8,7 @@ namespace Structura.Runtime;
 /// </summary>
 public sealed class StructuraDocumentContext
 {
-    private readonly Dictionary<TextSpan, RecordedEdit> _edits = new();
+    private readonly Dictionary<TextSpan, RecordedEdit> _edits = new Dictionary<TextSpan, RecordedEdit>();
 
     public StructuraDocumentContext(string originalText, string documentName)
     {

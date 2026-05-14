@@ -41,10 +41,10 @@ public sealed class SmallOrderXmlRoundTripTests
     }
 
     [Fact]
-    public void LongMutation_PatchesOnlyTheValueLiteral()
+    public void VersionMutation_PatchesOnlyTheValueLiteral()
     {
         var order = Source.ParseXml<SmallOrderXml>();
-        order.Version = 42;
+        order.Version = "42";
 
         order.ToXml().Should().Be(
             "<?xml version=\"1.0\"?>\n" +
@@ -56,10 +56,10 @@ public sealed class SmallOrderXmlRoundTripTests
     }
 
     [Fact]
-    public void BoolMutation_PatchesOnlyTheValueLiteral()
+    public void IsPriorityMutation_PatchesOnlyTheValueLiteral()
     {
         var order = Source.ParseXml<SmallOrderXml>();
-        order.IsPriority = false;
+        order.IsPriority = "false";
 
         order.ToXml().Should().Be(
             "<?xml version=\"1.0\"?>\n" +
@@ -75,8 +75,8 @@ public sealed class SmallOrderXmlRoundTripTests
     {
         var order = Source.ParseXml<SmallOrderXml>();
         order.Currency = "EUR";
-        order.Version = 99;
-        order.IsPriority = false;
+        order.Version = "99";
+        order.IsPriority = "false";
 
         order.ToXml().Should().Be(
             "<?xml version=\"1.0\"?>\n" +
@@ -115,7 +115,7 @@ public sealed class SmallOrderXmlRoundTripTests
     {
         var order = Source.ParseXml<SmallOrderXml>();
         order.Currency = "USD";
-        order.Version = 42;
+        order.Version = "42";
 
         IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)order).Changes;
 

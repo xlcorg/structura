@@ -31,13 +31,23 @@ internal static class DiffHunkBuilder
             var fullOutput = new List<DiffLine>();
             HunkRange fullHunk = MakeFullFileHunk(ranges);
             int contextNeeded = ComputeFullFileContextLines(ranges, oldLines.Length);
-            EmitContext fullCtx = new(oldLines, newLines, document.OriginalText, contextNeeded, options.InlineHighlight);
+            EmitContext fullCtx = new EmitContext(
+                oldLines,
+                newLines,
+                document.OriginalText,
+                contextNeeded,
+                options.InlineHighlight);
             EmitHunk(fullOutput, fullHunk, fullCtx);
             return fullOutput;
         }
 
         List<HunkRange> hunks = GroupIntoHunks(ranges, options.ContextLines);
-        EmitContext ctx = new(oldLines, newLines, document.OriginalText, options.ContextLines, options.InlineHighlight);
+        EmitContext ctx = new EmitContext(
+            oldLines,
+            newLines,
+            document.OriginalText,
+            options.ContextLines,
+            options.InlineHighlight);
 
         var output = new List<DiffLine>();
         for (var i = 0; i < hunks.Count; i++)
@@ -212,7 +222,7 @@ internal static class DiffHunkBuilder
         // Inside a change range, emit Removed for old lines, Added for new lines.
         int oldCursor = hunk.OldStartLine;
         int newCursor = hunk.NewStartLine;
-        List<ChangeRange> sortedChanges = new(hunk.Changes);
+        List<ChangeRange> sortedChanges = new List<ChangeRange>(hunk.Changes);
         sortedChanges.Sort((a, b) => a.OldStartLine.CompareTo(b.OldStartLine));
 
         foreach (ChangeRange c in sortedChanges)

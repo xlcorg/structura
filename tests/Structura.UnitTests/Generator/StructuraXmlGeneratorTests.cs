@@ -54,9 +54,12 @@ public sealed class StructuraXmlGeneratorTests
     {
         string source = GetGeneratedSource("order.xml", MinimalSample);
         source.Should().Contain("string Currency");
-        source.Should().Contain("long Version");
-        source.Should().Contain("bool IsPriority");
-        source.Should().Contain("decimal TotalAmount");
+        source.Should().Contain("string Version");
+        source.Should().Contain("string IsPriority");
+        source.Should().Contain("string TotalAmount");
+        source.Should().NotContain("long Version");
+        source.Should().NotContain("bool IsPriority");
+        source.Should().NotContain("decimal TotalAmount");
     }
 
     [Fact]
@@ -82,7 +85,7 @@ public sealed class StructuraXmlGeneratorTests
         const string src = "<order id=\"42\" status=\"paid\"/>";
         string source = GetGeneratedSource("order.xml", src);
 
-        source.Should().Contain("long Id");
+        source.Should().Contain("string Id");
         source.Should().Contain("string Status");
         source.Should().Contain("/@id");
         source.Should().Contain("/@status");

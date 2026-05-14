@@ -8,7 +8,7 @@ namespace Structura.Reporting.Internal.Highlighting;
 /// </summary>
 internal sealed class XmlLinePainter : IDiffSyntaxPainter
 {
-    public static readonly XmlLinePainter Instance = new();
+    public static readonly XmlLinePainter Instance = new XmlLinePainter();
 
     private XmlLinePainter() { }
 

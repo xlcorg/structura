@@ -139,7 +139,11 @@ public sealed class DiffLineRendererTests
     private sealed class StubPainter : IDiffSyntaxPainter
     {
         private readonly TokenRange[] _tokens;
-        public StubPainter(params TokenRange[] tokens) => _tokens = tokens;
+        public StubPainter(params TokenRange[] tokens)
+        {
+            _tokens = tokens;
+        }
+
         public IReadOnlyList<TokenRange> TokenizeLine(string content) => _tokens;
     }
 
