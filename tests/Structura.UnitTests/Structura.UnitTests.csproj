@@ -15,7 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Structura.Common\Structura.Common.csproj" />
         <ProjectReference Include="..\..\src\Structura.Generator\Structura.Generator.csproj" />
         <ProjectReference Include="..\..\src\Structura.Reporting\Structura.Reporting.csproj" />
         <ProjectReference Include="..\..\src\Structura.Runtime\Structura.Runtime.csproj" />

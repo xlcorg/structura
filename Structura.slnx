@@ -16,7 +16,6 @@
     <File Path="docs/plans/step-16-diff-reporter-separator-options.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Structura.Common/Structura.Common.csproj" />
     <Project Path="src/Structura.Generator/Structura.Generator.csproj" />
     <Project Path="src/Structura.Reporting/Structura.Reporting.csproj" />
     <Project Path="src/Structura.Runtime/Structura.Runtime.csproj" />

@@ -1,7 +1,3 @@
-// Demo host. End-to-end JSON + XML pipelines: ParseJson<T> / ParseXml<T> ->
-// mutate -> ToJson / ToXml + DiffReporter. See CLAUDE.md for the target API
-// and Samples/*.{json,xml} for the documents.
-
 using Structura.Common;
 using Structura.Generated;
 using Structura.Reporting;
@@ -9,8 +5,8 @@ using Structura.Runtime;
 
 // ── JSON pipeline ─────────────────────────────────────────────────────────────
 
-string orderJsonPath = Path.Combine(AppContext.BaseDirectory, "Samples", "order.sample.json");
-string orderJson = orderJsonPath.ReadAllText();
+string orderFile = ProjectFolders.Samples.AppendPath("order.sample.json");
+string orderJson = orderFile.ReadAllText();
 
 var order = orderJson.ParseJson<OrderSampleJson>();
 
@@ -41,8 +37,8 @@ Console.WriteLine();
 
 // ── XML pipeline ──────────────────────────────────────────────────────────────
 
-string blrwblPath = Path.Combine(AppContext.BaseDirectory, "Samples", "blrwbl.sample.xml");
-string blrwblXml = blrwblPath.ReadAllText();
+string blrwblFile = ProjectFolders.Samples.AppendPath("blrwbl.sample.xml");
+string blrwblXml = blrwblFile.ReadAllText();
 
 var waybill = blrwblXml.ParseXml<BlrwblSampleXml>();
 
@@ -74,8 +70,8 @@ Console.WriteLine();
 
 // ── Library pipeline (heterogeneous-item torture sample) ─────────────────────
 
-string libraryPath = Path.Combine(AppContext.BaseDirectory, "Samples", "library.sample.xml");
-string libraryXml = libraryPath.ReadAllText();
+string libraryFile = ProjectFolders.Samples.AppendPath("library.sample.xml");
+string libraryXml = libraryFile.ReadAllText();
 
 var library = libraryXml.ParseXml<LibrarySampleXml>();
 
@@ -94,8 +90,8 @@ Console.WriteLine();
 
 // ── Library JSON pipeline (heterogeneous-item torture sample, JSON side) ─────
 
-string libraryJsonPath = Path.Combine(AppContext.BaseDirectory, "Samples", "library.sample.json");
-string libraryJson = libraryJsonPath.ReadAllText();
+string libraryJsonFile = ProjectFolders.Samples.AppendPath("library.sample.json");
+string libraryJson = libraryJsonFile.ReadAllText();
 
 var libraryDoc = libraryJson.ParseJson<LibrarySampleJson>();
 

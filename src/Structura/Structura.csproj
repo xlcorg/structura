@@ -9,7 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Structura.Common\Structura.Common.csproj" />
         <ProjectReference Include="..\Structura.Generator\Structura.Generator.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
