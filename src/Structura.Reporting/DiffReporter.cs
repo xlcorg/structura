@@ -9,8 +9,7 @@ namespace Structura.Reporting;
 /// choice: <see cref="DiffReporterLayout.Unified"/> and
 /// <see cref="DiffReporterLayout.SideBySide"/> force a layout;
 /// <see cref="DiffReporterLayout.Auto"/> (the default) picks side-by-side when
-/// the terminal is wide enough for the longest content line, otherwise falls
-/// back to unified.
+/// the terminal meets the minimum two-column width, otherwise falls back to unified.
 /// </summary>
 public static class DiffReporter
 {
@@ -67,8 +66,7 @@ public static class DiffReporter
         DiffStats stats = DiffStats.Compute(lines);
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
-        int maxContentLen = ComputeMaxContentLen(lines);
-        DiffReporterLayout resolved = ResolveLayout(options.Layout, terminalWidth, gutterWidth, maxContentLen);
+        DiffReporterLayout resolved = ResolveLayout(options.Layout, terminalWidth, gutterWidth);
 
         if (resolved == DiffReporterLayout.Unified)
         {
@@ -80,7 +78,7 @@ public static class DiffReporter
         SideBySideRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, contentWidth, useColor, useUnicode);
     }
 
-    private static DiffReporterLayout ResolveLayout(DiffReporterLayout requested, int terminalWidth, int gutterWidth, int maxContentLen)
+    private static DiffReporterLayout ResolveLayout(DiffReporterLayout requested, int terminalWidth, int gutterWidth)
     {
         if (requested != DiffReporterLayout.Auto)
         {
@@ -88,19 +86,6 @@ public static class DiffReporter
         }
         int minSbsWidth = 2 * (gutterWidth + CellPaddingChars) + SeparatorChars + 2 * MinContentPerSide;
         return terminalWidth >= minSbsWidth ? DiffReporterLayout.SideBySide : DiffReporterLayout.Unified;
-    }
-
-    private static int ComputeMaxContentLen(IReadOnlyList<DiffLine> lines)
-    {
-        var max = 0;
-        foreach (DiffLine line in lines)
-        {
-            if (line.Content.Length > max)
-            {
-                max = line.Content.Length;
-            }
-        }
-        return max;
     }
 
     private static int ComputeSideBySideContentWidth(int terminalWidth, int gutterWidth)
