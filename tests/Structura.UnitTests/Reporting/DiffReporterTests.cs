@@ -213,9 +213,11 @@ public sealed class DiffReporterTests
 
         string output = sw.ToString();
         string expectedRule = new string('─', 80);
-        output.Should().StartWith(expectedRule + System.Environment.NewLine);
+        string expectedRuleLine = expectedRule + System.Environment.NewLine;
+        string expectedRuleAndDot = expectedRuleLine + "●";
+        output.Should().StartWith(expectedRuleLine);
         // Banner is the next thing after the rule.
-        output.Should().Contain(expectedRule + System.Environment.NewLine + "●");
+        output.Should().Contain(expectedRuleAndDot);
     }
 
     [Fact]
@@ -234,7 +236,9 @@ public sealed class DiffReporterTests
 
         string output = sw.ToString();
         string expectedRule = new string('-', 80);
-        output.Should().StartWith(expectedRule + System.Environment.NewLine);
-        output.Should().Contain(expectedRule + System.Environment.NewLine + "*");
+        string expectedRuleLine = expectedRule + System.Environment.NewLine;
+        string expectedRuleAndStar = expectedRuleLine + "*";
+        output.Should().StartWith(expectedRuleLine);
+        output.Should().Contain(expectedRuleAndStar);
     }
 }
