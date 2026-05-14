@@ -35,12 +35,8 @@ Console.WriteLine("=== Modified JSON ===");
 Console.WriteLine(modifiedJson);
 Console.WriteLine();
 
-Console.WriteLine("=== Diff (UnifiedDiffReporter) ===");
-UnifiedDiffReporter.Print(order);
-Console.WriteLine();
-
-Console.WriteLine("=== Diff (SideBySideDiffReporter) ===");
-SideBySideDiffReporter.Print(order);
+Console.WriteLine("=== Diff ===");
+DiffReporter.Print(order);
 Console.WriteLine();
 
 // ── XML pipeline ──────────────────────────────────────────────────────────────
@@ -72,12 +68,8 @@ Console.WriteLine("=== Modified BLRWBL XML ===");
 Console.WriteLine(modifiedBlrwbl);
 Console.WriteLine();
 
-Console.WriteLine("=== BLRWBL Diff (UnifiedDiffReporter) ===");
-UnifiedDiffReporter.Print(waybill);
-Console.WriteLine();
-
-Console.WriteLine("=== BLRWBL Diff (SideBySideDiffReporter) ===");
-SideBySideDiffReporter.Print(waybill);
+Console.WriteLine("=== Diff ===");
+DiffReporter.Print(waybill);
 Console.WriteLine();
 
 // ── Library pipeline (heterogeneous-item torture sample) ─────────────────────
@@ -96,12 +88,8 @@ Console.WriteLine("=== Modified Library XML ===");
 Console.WriteLine(modifiedLibrary);
 Console.WriteLine();
 
-Console.WriteLine("=== Library Diff (UnifiedDiffReporter) ===");
-UnifiedDiffReporter.Print(library);
-Console.WriteLine();
-
-Console.WriteLine("=== Library Diff (SideBySideDiffReporter) ===");
-SideBySideDiffReporter.Print(library);
+Console.WriteLine("=== Diff ===");
+DiffReporter.Print(library);
 Console.WriteLine();
 
 // ── Library JSON pipeline (heterogeneous-item torture sample, JSON side) ─────
@@ -137,10 +125,6 @@ Console.WriteLine("=== Modified Library JSON ===");
 Console.WriteLine(modifiedLibraryJson);
 Console.WriteLine();
 
-Console.WriteLine("=== Library JSON Diff (UnifiedDiffReporter) ===");
-UnifiedDiffReporter.Print(libraryDoc);
-Console.WriteLine();
-
-Console.WriteLine("=== Library JSON Diff (SideBySideDiffReporter) ===");
-SideBySideDiffReporter.Print(libraryDoc);
+Console.WriteLine("=== Diff ===");
+DiffReporter.Print(libraryDoc);
 Console.WriteLine();
