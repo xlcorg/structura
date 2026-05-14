@@ -1,15 +1,13 @@
 using Structura.Reporting.Internal;
-using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
 
 /// <summary>
-/// Renders <see cref="IStructuraDocument.Changes"/> as a Claude-Code-style
-/// unified diff: two-line banner, gutter with line numbers, sigil after the
-/// number, dark red/green row backgrounds, brighter inline-highlight overlays.
-/// Pairs with <see cref="SimpleReporter"/> (path-oriented) and
-/// <see cref="ConsoleDiffReporter"/> (per-change mini-hunks).
+/// Public wrapper kept temporarily during the Step 15 migration. The render
+/// loop now lives in <see cref="Internal.UnifiedRenderer"/>. This class is
+/// removed once <see cref="DiffReporter"/> is wired up and all tests have
+/// been re-pointed.
 /// </summary>
 public static class UnifiedDiffReporter
 {
@@ -59,18 +57,6 @@ public static class UnifiedDiffReporter
         DiffStats stats = DiffStats.Compute(lines);
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
-        IDiffSyntaxPainter painter = useColor
-            ? PainterFactory.For(document, options.SyntaxHighlight)
-            : NullPainter.Instance;
-
-        DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
-        writer.WriteLine();
-
-        foreach (DiffLine line in lines)
-        {
-            string rendered = DiffLineRenderer.Render(line, gutterWidth, useColor, useUnicode, painter);
-            writer.WriteLine(rendered);
-        }
+        UnifiedRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, useColor, useUnicode);
     }
-
 }
