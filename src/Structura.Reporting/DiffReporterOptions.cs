@@ -43,9 +43,10 @@ public sealed record DiffReporterOptions
 
     /// <summary>
     /// When <c>true</c>, emit a horizontal rule line spanning the resolved
-    /// terminal width immediately before the banner. The rule character is
-    /// <c>─</c> (utf-8) or <c>-</c> (ascii), matching the banner's
-    /// utf-8 / ascii branching. Default <c>false</c>.
+    /// terminal width immediately before the banner or the
+    /// <c>(no changes)</c> message. The rule character is <c>─</c> (utf-8)
+    /// or <c>-</c> (ascii), matching the banner's utf-8 / ascii branching.
+    /// Default <c>false</c>.
     /// </summary>
     public bool HorizontalRule { get; init; } = false;
 }
