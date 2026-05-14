@@ -1031,68 +1031,6 @@ internal static class XmlModelEmitter
             writerCall: "XmlValueWriter.WriteElementText(value)");
     }
 
-    private static (string csharpType, string ctorExpr, string writerCall) AttributeBindings(XmlGenScalarKind kind, string varName)
-    {
-        switch (kind)
-        {
-            case XmlGenScalarKind.String:
-                return ("string",
-                    $"{varName}.Value",
-                    "XmlValueWriter.WriteAttributeValue(value)");
-            case XmlGenScalarKind.Long:
-                return ("long",
-                    $"long.Parse({varName}.Value, CultureInfo.InvariantCulture)",
-                    "XmlValueWriter.WriteAttributeValue(XmlValueWriter.WriteInt64(value))");
-            case XmlGenScalarKind.Decimal:
-                return ("decimal",
-                    $"decimal.Parse({varName}.Value, CultureInfo.InvariantCulture)",
-                    "XmlValueWriter.WriteAttributeValue(XmlValueWriter.WriteDecimal(value))");
-            case XmlGenScalarKind.Boolean:
-                return ("bool",
-                    $"bool.Parse({varName}.Value)",
-                    "XmlValueWriter.WriteAttributeValue(XmlValueWriter.WriteBoolean(value))");
-            default:
-                throw new InvalidOperationException("Unknown scalar kind.");
-        }
-    }
-
-    private static (string csharpType, string ctorExpr, string writerCall) ElementBindings(XmlGenScalarKind kind, string textExpr)
-    {
-        switch (kind)
-        {
-            case XmlGenScalarKind.String:
-                return ("string",
-                    textExpr,
-                    "XmlValueWriter.WriteElementText(value)");
-            case XmlGenScalarKind.Long:
-                return ("long",
-                    $"long.Parse({textExpr}, CultureInfo.InvariantCulture)",
-                    "XmlValueWriter.WriteInt64(value)");
-            case XmlGenScalarKind.Decimal:
-                return ("decimal",
-                    $"decimal.Parse({textExpr}, CultureInfo.InvariantCulture)",
-                    "XmlValueWriter.WriteDecimal(value)");
-            case XmlGenScalarKind.Boolean:
-                return ("bool",
-                    $"bool.Parse({textExpr})",
-                    "XmlValueWriter.WriteBoolean(value)");
-            default:
-                throw new InvalidOperationException("Unknown scalar kind.");
-        }
-    }
-
-    private static string DefaultValueExpr(XmlGenScalarKind kind)
-    {
-        switch (kind)
-        {
-            case XmlGenScalarKind.String: return "string.Empty";
-            case XmlGenScalarKind.Long: return "0L";
-            case XmlGenScalarKind.Decimal: return "0m";
-            case XmlGenScalarKind.Boolean: return "false";
-            default: throw new InvalidOperationException("Unknown scalar kind.");
-        }
-    }
-
     // ── Misc helpers ─────────────────────────────────────────────────────────
 
     private static string MakeUnique(string baseName, HashSet<string> used)

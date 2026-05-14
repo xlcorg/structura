@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 namespace Structura.Runtime.Xml;
@@ -79,32 +78,5 @@ public static class XmlValueWriter
         }
         sb.Append('"');
         return sb.ToString();
-    }
-
-    public static string WriteInt64(long value)
-    {
-        return value.ToString(CultureInfo.InvariantCulture);
-    }
-
-    public static string WriteInt32(int value)
-    {
-        return value.ToString(CultureInfo.InvariantCulture);
-    }
-
-    public static string WriteDouble(double value)
-    {
-        return value.ToString("R", CultureInfo.InvariantCulture);
-    }
-
-    public static string WriteDecimal(decimal value)
-    {
-        return value.ToString(CultureInfo.InvariantCulture);
-    }
-
-    public static string WriteBoolean(bool value)
-    {
-        return value
-            ? "true"
-            : "false";
     }
 }
