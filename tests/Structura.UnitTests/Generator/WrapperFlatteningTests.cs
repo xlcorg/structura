@@ -28,7 +28,7 @@ public sealed class WrapperFlatteningTests
         string source = GetGeneratedSource("envelope.xml", src);
 
         // <inner>'s scalars become properties of the model.
-        source.Should().Contain("long A");
+        source.Should().Contain("string A");
         source.Should().Contain("string B");
         // The literal root <wrapper> name is still validated.
         source.Should().Contain("Expected <wrapper> at root");
@@ -42,7 +42,7 @@ public sealed class WrapperFlatteningTests
         const string src = "<a><b><c><x>1</x></c></b></a>";
         string source = GetGeneratedSource("nested.xml", src);
 
-        source.Should().Contain("long X");
+        source.Should().Contain("string X");
         // Three-level descent — both intermediate wrappers walked.
         source.Should()
             .Contain("RequireElement(\"b\")").And
@@ -59,7 +59,7 @@ public sealed class WrapperFlatteningTests
         // is the effective root, so `Id` becomes a scalar property here. Step 8
         // additionally classifies <inner> as a Pattern A wrapper-style collection,
         // so the generator emits an Inner property + InnerGroup nested type.
-        source.Should().Contain("long Id");
+        source.Should().Contain("string Id");
         source.Should().Contain("InnerGroup Inner");
     }
 

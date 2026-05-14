@@ -35,13 +35,13 @@ public sealed class BlrwblLineItemTests
         BlrwblSampleXml.LineItem item = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0];
 
         // Compile-time type assertions via local variables.
-        long number = item.LineItemNumber;
+        string number = item.LineItemNumber;
         string name = item.LineItemName;
-        decimal weight = item.GrossWeightValue;
+        string weight = item.GrossWeightValue;
 
-        number.Should().Be(1L);
+        number.Should().Be("1");
         name.Should().Be("Хлеб «Ласунок»");
-        weight.Should().Be(0.01m);
+        weight.Should().Be("0.01");
     }
 
     [Fact]
@@ -53,17 +53,17 @@ public sealed class BlrwblLineItemTests
     }
 
     [Fact]
-    public void LineItemExtraField_FieldName_IsString_FieldValue_IsLong()
+    public void LineItemExtraField_FieldName_IsString_FieldValue_IsString()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
         BlrwblSampleXml.LineItemExtraField field = doc.DespatchAdviceLogisticUnitLineItem.LineItems[0].LineItemExtraFields[0];
 
         // Compile-time type assertions.
         string fieldName = field.FieldName;
-        long fieldValue = field.FieldValue;
+        string fieldValue = field.FieldValue;
 
         fieldName.Should().Be("InventoryId");
-        fieldValue.Should().Be(123456L);
+        fieldValue.Should().Be("123456");
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class BlrwblLineItemTests
         string source = LoadSample();
         var doc = source.ParseXml<BlrwblSampleXml>();
 
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = 42;
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = "42";
         string modified = doc.ToXml();
 
         modified.Should().Contain("<LineItemNumber>42</LineItemNumber>");
@@ -94,7 +94,7 @@ public sealed class BlrwblLineItemTests
         string source = LoadSample();
         var doc = source.ParseXml<BlrwblSampleXml>();
 
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = 999;
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = "999";
         string modified = doc.ToXml();
 
         DocumentChange change = ((IStructuraDocument)doc).Changes.Single();
@@ -110,7 +110,7 @@ public sealed class BlrwblLineItemTests
     public void Changes_Path_IncludesWrapperAndIndex()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = 999;
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = "999";
 
         string path = ((IStructuraDocument)doc).Changes.Single().Path;
         path.Should().Be(
@@ -121,9 +121,9 @@ public sealed class BlrwblLineItemTests
     public void MutatingMultipleLevels_PatchedTogether()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        doc.SealID = 99999;
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[0].LineItemNumber = 100;
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = 999;
+        doc.SealID = "99999";
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[0].LineItemNumber = "100";
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemExtraFields[0].FieldValue = "999";
 
         string modified = doc.ToXml();
         modified.Should().Contain("<SealID>99999</SealID>");
@@ -145,7 +145,7 @@ public sealed class BlrwblLineItemTests
         var doc = source.ParseXml<BlrwblSampleXml>();
 
         // Mutate only LineItem[1]; LineItem[0] must remain byte-identical.
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = 42;
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = "42";
         string modified = doc.ToXml();
 
         DocumentChange change = ((IStructuraDocument)doc).Changes.Single();

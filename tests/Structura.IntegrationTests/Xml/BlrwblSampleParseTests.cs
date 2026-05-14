@@ -141,10 +141,10 @@ public sealed class BlrwblSampleParseTests
     }
 
     [Fact]
-    public void MutatingScalarLong_FormatsInvariant()
+    public void MutatingScalar_WritesValueVerbatim()
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
-        doc.SealID = 99999;
+        doc.SealID = "99999";
 
         doc.ToXml().Should().Contain("<SealID>99999</SealID>");
     }
@@ -154,7 +154,7 @@ public sealed class BlrwblSampleParseTests
     {
         var doc = LoadSample().ParseXml<BlrwblSampleXml>();
         doc.Currency = "USD";
-        doc.SealID = 99999;
+        doc.SealID = "99999";
 
         IReadOnlyList<DocumentChange> changes = ((IStructuraDocument)doc).Changes;
         // Sorted by Span.Start — SealID (line 69) precedes Currency (line 71).
@@ -171,9 +171,9 @@ public sealed class BlrwblSampleParseTests
         string source = LoadSample();
         var doc = source.ParseXml<BlrwblSampleXml>();
 
-        doc.SealID = 99999;
+        doc.SealID = "99999";
         doc.Currency = "USD";
-        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = 42;
+        doc.DespatchAdviceLogisticUnitLineItem.LineItems[1].LineItemNumber = "42";
 
         string modified = doc.ToXml();
 

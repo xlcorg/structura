@@ -24,7 +24,6 @@ internal static class XmlModelEmitter
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using System.Globalization;");
         sb.AppendLine("using Structura.Runtime;");
         sb.AppendLine("using Structura.Runtime.Xml;");
         sb.AppendLine();
@@ -697,8 +696,7 @@ internal static class XmlModelEmitter
               .Append(s.LookupVarName).Append("?.ValueSpan ?? default;");
             sb.AppendLine();
             sb.Append("            _").Append(s.CamelName).Append(" = ")
-              .Append(s.LookupVarName).Append(" is null ? ")
-              .Append(DefaultValueExpr(s.Kind)).Append(" : ")
+              .Append(s.LookupVarName).Append(" is null ? string.Empty : ")
               .Append(s.AbsentSafeCtorExpr).AppendLine(";");
         }
         else
@@ -712,8 +710,7 @@ internal static class XmlModelEmitter
             sb.Append("            _").Append(s.CamelName).Append("ValueSpan = ")
               .Append(s.LookupVarName).Append("?.InnerSpan ?? default;");
             sb.Append("            _").Append(s.CamelName).Append(" = ")
-              .Append(s.LookupVarName).Append(" is null ? ")
-              .Append(DefaultValueExpr(s.Kind)).Append(" : ")
+              .Append(s.LookupVarName).Append(" is null ? string.Empty : ")
               .Append(s.AbsentSafeCtorExpr).AppendLine(";");
         }
     }
@@ -803,16 +800,15 @@ internal static class XmlModelEmitter
 
         if (prop.IsAttribute)
         {
-            (string csharpType, string ctorExpr, string writerCall) = AttributeBindings(prop.Kind, camelName + "Attr");
             return new NestedScalar(
                 xmlName: prop.Name,
                 pascalName: pascalName,
                 camelName: camelName,
-                csharpType: csharpType,
+                csharpType: "string",
                 isAttribute: true,
                 lookupVarName: camelName + "Attr",
-                ctorExpr: ctorExpr,
-                writerCall: writerCall,
+                ctorExpr: $"{camelName}Attr.Value",
+                writerCall: "XmlValueWriter.WriteAttributeValue(value)",
                 pathSuffix: "/@" + prop.Name);
         }
 
@@ -820,16 +816,15 @@ internal static class XmlModelEmitter
         // elements (<last-name></last-name>) read as empty strings rather
         // than crashing on Children[0].
         var textExpr = $"({camelName}El.Children.Count > 0 && {camelName}El.Children[0] is XmlSourceText t_{camelName} ? t_{camelName}.Value : string.Empty)";
-        (string typeStr, string ctor, string writer) = ElementBindings(prop.Kind, textExpr);
         return new NestedScalar(
             xmlName: prop.Name,
             pascalName: pascalName,
             camelName: camelName,
-            csharpType: typeStr,
+            csharpType: "string",
             isAttribute: false,
             lookupVarName: camelName + "El",
-            ctorExpr: ctor,
-            writerCall: writer,
+            ctorExpr: textExpr,
+            writerCall: "XmlValueWriter.WriteElementText(value)",
             pathSuffix: "/" + pascalName);
     }
 
@@ -980,31 +975,29 @@ internal static class XmlModelEmitter
 
         if (prop.IsAttribute)
         {
-            (string csharpType, string ctorExpr, string writerCall) = AttributeBindings(prop.Kind, camelName + "Attr");
             return new RootScalar(
                 xmlName: prop.Name,
                 pascalName: pascalName,
                 camelName: camelName,
-                csharpType: csharpType,
+                csharpType: "string",
                 lookupExpr: $"root.RequireAttribute(\"{EscapeForCsString(prop.Name)}\")",
                 lookupVarName: camelName + "Attr",
                 spanExpr: ".ValueSpan",
-                ctorExpr: ctorExpr,
-                writerCall: writerCall,
+                ctorExpr: $"{camelName}Attr.Value",
+                writerCall: "XmlValueWriter.WriteAttributeValue(value)",
                 path: "/@" + prop.Name);
         }
 
-        (string typeStr, string ctor, string writer) = ElementBindings(prop.Kind, $"((XmlSourceText){camelName}El.Children[0]).Value");
         return new RootScalar(
             xmlName: prop.Name,
             pascalName: pascalName,
             camelName: camelName,
-            csharpType: typeStr,
+            csharpType: "string",
             lookupExpr: $"root.RequireElement(\"{EscapeForCsString(prop.Name)}\")",
             lookupVarName: camelName + "El",
             spanExpr: ".InnerSpan",
-            ctorExpr: ctor,
-            writerCall: writer,
+            ctorExpr: $"((XmlSourceText){camelName}El.Children[0]).Value",
+            writerCall: "XmlValueWriter.WriteElementText(value)",
             path: "/" + pascalName);
     }
 
@@ -1015,31 +1008,27 @@ internal static class XmlModelEmitter
 
         if (prop.IsAttribute)
         {
-            (string csharpType, string ctorExpr, string writerCall) = AttributeBindings(prop.Kind, camelName + "Attr");
             return new ItemScalar(
                 xmlName: prop.Name,
                 pascalName: pascalName,
                 camelName: camelName,
-                csharpType: csharpType,
+                csharpType: "string",
                 isAttribute: true,
                 lookupVarName: camelName + "Attr",
-                absentSafeCtorExpr: ctorExpr,
-                writerCall: writerCall,
-                kind: prop.Kind);
+                absentSafeCtorExpr: $"{camelName}Attr.Value",
+                writerCall: "XmlValueWriter.WriteAttributeValue(value)");
         }
 
         var textExpr = $"({camelName}El.Children.Count > 0 && {camelName}El.Children[0] is XmlSourceText t_{camelName} ? t_{camelName}.Value : string.Empty)";
-        (string typeStr, string ctor, string writer) = ElementBindings(prop.Kind, textExpr);
         return new ItemScalar(
             xmlName: prop.Name,
             pascalName: pascalName,
             camelName: camelName,
-            csharpType: typeStr,
+            csharpType: "string",
             isAttribute: false,
             lookupVarName: camelName + "El",
-            absentSafeCtorExpr: ctor,
-            writerCall: writer,
-            kind: prop.Kind);
+            absentSafeCtorExpr: textExpr,
+            writerCall: "XmlValueWriter.WriteElementText(value)");
     }
 
     private static (string csharpType, string ctorExpr, string writerCall) AttributeBindings(XmlGenScalarKind kind, string varName)
@@ -1214,8 +1203,7 @@ internal static class XmlModelEmitter
             bool isAttribute,
             string lookupVarName,
             string absentSafeCtorExpr,
-            string writerCall,
-            XmlGenScalarKind kind)
+            string writerCall)
         {
             XmlName = xmlName;
             PascalName = pascalName;
@@ -1225,7 +1213,6 @@ internal static class XmlModelEmitter
             LookupVarName = lookupVarName;
             AbsentSafeCtorExpr = absentSafeCtorExpr;
             WriterCall = writerCall;
-            Kind = kind;
         }
 
         public string XmlName { get; }
@@ -1236,7 +1223,6 @@ internal static class XmlModelEmitter
         public string LookupVarName { get; }
         public string AbsentSafeCtorExpr { get; }
         public string WriterCall { get; }
-        public XmlGenScalarKind Kind { get; }
     }
 
     /// <summary>

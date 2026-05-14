@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using Structura.Runtime;
 using Structura.Runtime.Xml;
 
@@ -22,8 +20,8 @@ public sealed class SmallOrderXml : IStructuraXmlDocument<SmallOrderXml>, IStruc
     private readonly TextSpan _isPriorityValueSpan;
 
     private string _currency;
-    private long _version;
-    private bool _isPriority;
+    private string _version;
+    private string _isPriority;
 
     private SmallOrderXml(string source, XmlSourceElement root)
     {
@@ -35,13 +33,11 @@ public sealed class SmallOrderXml : IStructuraXmlDocument<SmallOrderXml>, IStruc
 
         XmlSourceElement version = root.RequireElement("version");
         _versionValueSpan = version.InnerSpan;
-        _version = long.Parse(
-            ((XmlSourceText)version.Children[0]).Value,
-            CultureInfo.InvariantCulture);
+        _version = ((XmlSourceText)version.Children[0]).Value;
 
         XmlSourceElement isPriority = root.RequireElement("is_priority");
         _isPriorityValueSpan = isPriority.InnerSpan;
-        _isPriority = bool.Parse(((XmlSourceText)isPriority.Children[0]).Value);
+        _isPriority = ((XmlSourceText)isPriority.Children[0]).Value;
     }
 
     public static string SourceFileName => "small-order.xml";
@@ -67,23 +63,23 @@ public sealed class SmallOrderXml : IStructuraXmlDocument<SmallOrderXml>, IStruc
         }
     }
 
-    public long Version
+    public string Version
     {
         get => _version;
         set
         {
             _version = value;
-            _ctx.Record("/version", _versionValueSpan, XmlValueWriter.WriteInt64(value));
+            _ctx.Record("/version", _versionValueSpan, XmlValueWriter.WriteElementText(value));
         }
     }
 
-    public bool IsPriority
+    public string IsPriority
     {
         get => _isPriority;
         set
         {
             _isPriority = value;
-            _ctx.Record("/is_priority", _isPriorityValueSpan, XmlValueWriter.WriteBoolean(value));
+            _ctx.Record("/is_priority", _isPriorityValueSpan, XmlValueWriter.WriteElementText(value));
         }
     }
 
