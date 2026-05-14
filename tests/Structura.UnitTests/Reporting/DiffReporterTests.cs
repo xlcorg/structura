@@ -257,7 +257,8 @@ public sealed class DiffReporterTests
         DiffReporter.RenderTo(doc, sw, options, terminalWidth: 80, useColor: false, useUnicode: true);
 
         string output = sw.ToString();
-        string[] lines = output.Split(new[] { System.Environment.NewLine }, System.StringSplitOptions.None);
+        var newlineSeparators = new[] { System.Environment.NewLine };
+        string[] lines = output.Split(newlineSeparators, System.StringSplitOptions.None);
 
         string expectedRule = new string('─', 80);
         lines[0].Should().BeEmpty();
