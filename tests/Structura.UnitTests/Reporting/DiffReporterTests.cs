@@ -265,4 +265,28 @@ public sealed class DiffReporterTests
         lines[1].Should().Be(expectedRule);
         lines[2].Should().StartWith("●");
     }
+
+    [Fact]
+    public void RenderTo_NoChanges_BothSeparatorsEnabled_EmitsBlankAndRuleBeforeNoChangesMessage()
+    {
+        var emptyDoc = new FakeStructuraDocument(Source, System.Array.Empty<DocumentChange>(), documentName: "test.json");
+        var sw = new System.IO.StringWriter();
+
+        var options = new DiffReporterOptions
+        {
+            Layout = DiffReporterLayout.Unified,
+            LeadingBlankLine = true,
+            HorizontalRule = true,
+        };
+        DiffReporter.RenderTo(emptyDoc, sw, options, terminalWidth: 80, useColor: false, useUnicode: true);
+
+        string output = sw.ToString();
+        var newlineSeparators = new[] { System.Environment.NewLine };
+        string[] lines = output.Split(newlineSeparators, System.StringSplitOptions.None);
+        string expectedRule = new string('─', 80);
+
+        lines[0].Should().BeEmpty();
+        lines[1].Should().Be(expectedRule);
+        lines[2].Should().Be("(no changes)");
+    }
 }
