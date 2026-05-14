@@ -67,12 +67,8 @@ public static class DiffReporter
         DiffStats stats = DiffStats.Compute(lines);
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
 
-        // Auto resolution lands in Task 5; for now Auto behaves like Unified.
-        DiffReporterLayout resolved = options.Layout switch
-        {
-            DiffReporterLayout.SideBySide => DiffReporterLayout.SideBySide,
-            _ => DiffReporterLayout.Unified,
-        };
+        int maxContentLen = ComputeMaxContentLen(lines);
+        DiffReporterLayout resolved = ResolveLayout(options.Layout, terminalWidth, gutterWidth, maxContentLen);
 
         if (resolved == DiffReporterLayout.Unified)
         {
@@ -82,6 +78,29 @@ public static class DiffReporter
 
         int contentWidth = ComputeSideBySideContentWidth(terminalWidth, gutterWidth);
         SideBySideRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, contentWidth, useColor, useUnicode);
+    }
+
+    private static DiffReporterLayout ResolveLayout(DiffReporterLayout requested, int terminalWidth, int gutterWidth, int maxContentLen)
+    {
+        if (requested != DiffReporterLayout.Auto)
+        {
+            return requested;
+        }
+        int minSbsWidth = 2 * (gutterWidth + CellPaddingChars) + SeparatorChars + 2 * MinContentPerSide;
+        return terminalWidth >= minSbsWidth ? DiffReporterLayout.SideBySide : DiffReporterLayout.Unified;
+    }
+
+    private static int ComputeMaxContentLen(IReadOnlyList<DiffLine> lines)
+    {
+        var max = 0;
+        foreach (DiffLine line in lines)
+        {
+            if (line.Content.Length > max)
+            {
+                max = line.Content.Length;
+            }
+        }
+        return max;
     }
 
     private static int ComputeSideBySideContentWidth(int terminalWidth, int gutterWidth)
