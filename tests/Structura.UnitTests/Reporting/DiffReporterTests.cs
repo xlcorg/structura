@@ -36,6 +36,14 @@ public sealed class DiffReporterTests
     }
 
     [Fact]
+    public void DiffReporterOptions_Defaults_SyntaxHighlightIsTrue()
+    {
+        var options = new DiffReporterOptions();
+
+        options.SyntaxHighlight.Should().BeTrue();
+    }
+
+    [Fact]
     public void Print_NoChanges_WritesNoChangesMessage()
     {
         var doc = new FakeStructuraDocument(Source, System.Array.Empty<DocumentChange>(), documentName: "test.json");
