@@ -94,7 +94,7 @@ resharper_xmldoc_max_line_length = 180
 resharper_arrange_accessor_owner_body_highlighting = error
 resharper_arrange_attributes_highlighting = error
 resharper_arrange_constructor_or_destructor_body_highlighting = error
-resharper_arrange_method_or_operator_body_highlighting = error
+resharper_arrange_method_or_operator_body_highlighting = none
 resharper_arrange_object_creation_when_type_evident_highlighting = error
 resharper_arrange_redundant_parentheses_highlighting = hint
 resharper_arrange_this_qualifier_highlighting = error
@@ -116,9 +116,6 @@ resharper_class_can_be_sealed_global_highlighting = warning
 resharper_class_can_be_sealed_local_highlighting = warning
 resharper_incorrect_blank_lines_near_braces_highlighting = warning
 resharper_suggest_var_or_type_deconstruction_declarations_highlighting = warning
-resharper_suggest_var_or_type_built_in_types_highlighting = error
-resharper_suggest_var_or_type_simple_types_highlighting = error
-resharper_suggest_var_or_type_elsewhere_highlighting = error
 resharper_tabs_are_disallowed_highlighting = warning
 resharper_unnecessary_whitespace_highlighting = none
 resharper_web_config_module_not_resolved_highlighting = warning
@@ -168,7 +165,7 @@ resharper_attribute_style = do_not_touch
 resharper_max_formal_parameters_on_line = 1
 resharper_csharp_wrap_before_comma = false
 resharper_csharp_max_attribute_length_for_same_line = 0
-resharper_csharp_method_or_operator_body = block_body
+# resharper_csharp_method_or_operator_body = block_body
 
 # Microsoft .NET properties
 csharp_indent_braces = false
