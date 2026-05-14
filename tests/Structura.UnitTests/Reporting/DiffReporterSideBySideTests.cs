@@ -67,6 +67,22 @@ public sealed class DiffReporterSideBySideTests
     }
 
     [Fact]
+    public void Print_StringWriter_NoAnsiEscapes()
+    {
+        int ageOffset = Source.IndexOf("30", System.StringComparison.Ordinal);
+        var c = new DocumentChange("/age", new TextSpan(ageOffset, 2), "30", "42");
+        var doc = new FakeStructuraDocument(Source, new[] { c }, documentName: "test.json")
+        {
+            CurrentTextOverride = Source[..ageOffset] + "42" + Source[(ageOffset + 2)..],
+        };
+        var sw = new System.IO.StringWriter();
+
+        Render(doc, sw, 120);
+
+        sw.ToString().Should().NotContain("\x1b");
+    }
+
+    [Fact]
     public void Print_TwoFarChanges_HunkSeparatorRowOnBothSides()
     {
         var sb = new System.Text.StringBuilder();

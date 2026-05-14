@@ -121,7 +121,7 @@ public sealed class DiffReporterSideBySideColorTests
         };
         var sw = new System.IO.StringWriter();
 
-        var withLayout = new DiffReporterOptions() with { Layout = DiffReporterLayout.SideBySide };
+        var withLayout = new DiffReporterOptions { Layout = DiffReporterLayout.SideBySide };
         DiffReporter.RenderTo(doc, sw, withLayout, terminalWidth: 120, useColor: true, useUnicode: true);
 
         string output = sw.ToString();
