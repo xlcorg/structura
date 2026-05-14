@@ -30,11 +30,34 @@
       "sku": "NB-001",
       "quantity": 1,
       "unit_price": 14999.95,
-      "tags": ["electronics", "laptop"],
-      "serial_numbers": ["SN-A1B2C3"],
+      "tags": [
+        "electronics",
+        "laptop"
+      ],
+      "serial_numbers": [
+        "SN-A1B2C3"
+      ],
       "manufacturer": {
         "name": "Lenovo",
         "country_code": "CN"
+      },
+      "price": {
+        "currency_code": "BYN",
+        "price_with_vat": {
+          "value": "229.67"
+        },
+        "price_without_vat": {
+          "value": "229.67"
+        }
+      },
+      "price_spt": {
+        "currency_code": "BYN",
+        "price_with_vat": {
+          "value": "229.67"
+        },
+        "price_without_vat": {
+          "value": "229.67"
+        }
       }
     },
     {
@@ -42,12 +65,35 @@
       "sku": "NB-002",
       "quantity": 1,
       "unit_price": 14999.95,
-      "tags": ["electronics", "laptop"],
-      "serial_numbers": ["SN-D4E5F6"],
+      "tags": [
+        "electronics",
+        "laptop"
+      ],
+      "serial_numbers": [
+        "SN-D4E5F6"
+      ],
       "note": "Replacement unit",
       "manufacturer": {
         "name": "GenericCo",
         "country_code": null
+      },
+      "price": {
+        "currency_code": "BYN",
+        "price_with_vat": {
+          "value": "229.67"
+        },
+        "price_without_vat": {
+          "value": "229.67"
+        }
+      },
+      "price_spt": {
+        "currency_code": "BYN",
+        "price_with_vat": {
+          "value": "229.67"
+        },
+        "price_without_vat": {
+          "value": "229.67"
+        }
       }
     }
   ],

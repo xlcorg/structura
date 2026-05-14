@@ -135,6 +135,65 @@ public sealed class JsonNestedObjectsTests
         source.Should().NotContain("\"/customer/prefs/flag\"");
     }
 
+    [Fact]
+    public void SameNestedKey_UnderDifferentParents_EmitsScopedTypes_NoCollision()
+    {
+        // Same nested key 'c' under two sibling parents 'a' and 'b' would, in
+        // a flat emission scheme, produce two `class CType` declarations at
+        // the root-class scope and collide on CS0102 (_ctx / _pathPrefix
+        // re-declared). The emitter must nest each child class inside its
+        // parent's scope so the two CType declarations are isolated
+        // (AType.CType vs BType.CType).
+        const string src = "{\"a\":{\"c\":{\"v\":1}},\"b\":{\"c\":{\"v\":2}}}";
+
+        string source = Generate(src);
+
+        int cTypeOccurrences = CountOccurrences(source, "partial class CType");
+        cTypeOccurrences.Should().Be(2);
+
+        // The first CType is nested inside AType's body, the second inside
+        // BType's — verify by relative position of the class headers.
+        int aTypeStart = source.IndexOf("partial class AType", System.StringComparison.Ordinal);
+        int bTypeStart = source.IndexOf("partial class BType", System.StringComparison.Ordinal);
+        int firstCType = source.IndexOf("partial class CType", System.StringComparison.Ordinal);
+        int lastCType = source.LastIndexOf("partial class CType", System.StringComparison.Ordinal);
+
+        aTypeStart.Should().BePositive();
+        bTypeStart.Should().BeGreaterThan(aTypeStart);
+        firstCType.Should().BeGreaterThan(aTypeStart).And.BeLessThan(bTypeStart);
+        lastCType.Should().BeGreaterThan(bTypeStart);
+    }
+
+    [Fact]
+    public void SameNestedKey_AtDifferentDepths_DoesNotCollide()
+    {
+        // Mirrors the order sample: 'price_with_vat' appears both as a direct
+        // child of 'price' AND as a child of 'price.price_spt'. Each produces
+        // a 'PriceWithVatType'; both must coexist in distinct scopes
+        // (PriceType.PriceWithVatType vs PriceSptType.PriceWithVatType) rather
+        // than as duplicate root-level partials that collide on CS0102.
+        const string src =
+            "{\"price\":{\"price_with_vat\":{\"v\":\"a\"}," +
+            "\"price_spt\":{\"price_with_vat\":{\"v\":\"b\"}}}}";
+
+        string source = Generate(src);
+
+        int occurrences = CountOccurrences(source, "partial class PriceWithVatType");
+        occurrences.Should().Be(2);
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        var count = 0;
+        var idx = 0;
+        while ((idx = haystack.IndexOf(needle, idx, System.StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            idx += needle.Length;
+        }
+        return count;
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static string Generate(string jsonContent)

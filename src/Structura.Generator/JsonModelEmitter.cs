@@ -78,7 +78,13 @@ internal static class JsonModelEmitter
         sb.AppendLine("    IReadOnlyList<DocumentChange> IStructuraDocument.Changes => _ctx.Changes;");
 
         // ── Nested types (depth-first) ───────────────────────────────────────
-        EmitNestedTypesRecursive(sb, info.Root);
+        // Nested types are emitted as members of their parent class, not as
+        // flat siblings of the root, so the same JSON key name appearing under
+        // different parents (e.g. `price.price_with_vat` and
+        // `price.price_spt.price_with_vat`) yields distinct C# types in
+        // separate scopes (`PriceType.PriceWithVatType` vs
+        // `PriceSptType.PriceWithVatType`) instead of colliding on CS0102.
+        EmitNestedTypesRecursive(sb, info.Root, classIndent: "    ");
 
         sb.AppendLine("}");
         return sb.ToString();
@@ -519,11 +525,17 @@ internal static class JsonModelEmitter
 
     // ── Recursive nested-type emission ───────────────────────────────────────
 
-    private static void EmitNestedTypesRecursive(StringBuilder sb, JsonGenObject parent)
+    /// <summary>
+    /// Emits all child object types declared by <paramref name="parent"/>.
+    /// <paramref name="classIndent"/> is the indent of the <c>partial class</c>
+    /// header (i.e. of the enclosing scope's class members), and grows by four
+    /// spaces per level of nesting.
+    /// </summary>
+    private static void EmitNestedTypesRecursive(StringBuilder sb, JsonGenObject parent, string classIndent)
     {
         foreach (JsonGenNestedObject nested in parent.NestedObjects)
         {
-            EmitChildClass(sb, NestedObjectTypeName(nested.Name), nested.Object);
+            EmitChildClass(sb, NestedObjectTypeName(nested.Name), nested.Object, classIndent);
         }
 
         foreach (JsonGenCollection coll in parent.Collections)
@@ -537,29 +549,35 @@ internal static class JsonModelEmitter
                 // when building the property's IReadOnlyList<T>.
                 string propName = IdentifierSanitizer.ToPascalCase(coll.Name);
                 string itemTypeName = SingularizeForItemType(coll.Name, propName);
-                EmitChildClass(sb, itemTypeName, coll.ObjectItem);
+                EmitChildClass(sb, itemTypeName, coll.ObjectItem, classIndent);
             }
         }
     }
 
-    private static void EmitChildClass(StringBuilder sb, string className, JsonGenObject child)
+    private static void EmitChildClass(StringBuilder sb, string className, JsonGenObject child, string classIndent)
     {
+        string memberIndent = classIndent + "    ";
+        string ctorIndent = memberIndent + "    ";
+
         sb.AppendLine();
-        sb.Append("    public sealed partial class ").AppendLine(className);
-        sb.AppendLine("    {");
+        sb.Append(classIndent).Append("public sealed partial class ").AppendLine(className);
+        sb.Append(classIndent).AppendLine("{");
 
         EmitObjectMembers(
             sb,
             obj: child,
             className: className,
             isRoot: false,
-            classIndent: "        ",
-            ctorIndent: "            ",
+            classIndent: memberIndent,
+            ctorIndent: ctorIndent,
             sourceObjectVar: "obj");
 
-        sb.AppendLine("    }");
+        // Recurse before closing the brace so child types are nested inside
+        // this class rather than emitted as siblings of the root — see the
+        // note in Emit().
+        EmitNestedTypesRecursive(sb, child, memberIndent);
 
-        EmitNestedTypesRecursive(sb, child);
+        sb.Append(classIndent).AppendLine("}");
     }
 
     // ── Scalar & writer mappings ─────────────────────────────────────────────

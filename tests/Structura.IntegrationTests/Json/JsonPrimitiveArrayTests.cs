@@ -110,8 +110,8 @@ public sealed class JsonPrimitiveArrayTests
         order.Currency = "USD";
         string modified = order.ToJson();
 
-        modified.Should().Contain("\"tags\": [\"electronics\", \"laptop\"]");
-        modified.Should().Contain("\"serial_numbers\": [\"SN-A1B2C3\"]");
-        modified.Should().Contain("\"serial_numbers\": [\"SN-D4E5F6\"]");
+        modified.Should().Contain("\"tags\": [\n        \"electronics\",\n        \"laptop\"\n      ]");
+        modified.Should().Contain("\"serial_numbers\": [\n        \"SN-A1B2C3\"\n      ]");
+        modified.Should().Contain("\"serial_numbers\": [\n        \"SN-D4E5F6\"\n      ]");
     }
 }

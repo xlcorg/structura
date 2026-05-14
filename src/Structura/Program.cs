@@ -24,6 +24,11 @@ order.BillingAddress.City = "Rotterdam";
 order.Items[0].Quantity = 2;
 order.Items[1].Manufacturer.CountryCode = "DE";
 
+foreach (var lineItem in order.Items)
+{
+    Console.WriteLine($"{lineItem.LineId}: {lineItem.Price.CurrencyCode} {lineItem.Price.PriceWithVat.Value}");
+}
+
 string modifiedJson = order.ToJson();
 
 Console.WriteLine("=== Modified JSON ===");
