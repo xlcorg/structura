@@ -12,6 +12,8 @@
     <File Path="docs/plans/step-12-side-by-side-diff-reporter.md" />
     <File Path="docs/plans/step-13-reporter-syntax-highlighting.md" />
     <File Path="docs/plans/step-14-xml-scalars-as-string.md" />
+    <File Path="docs/plans/step-15-diff-reporter-with-layout.md" />
+    <File Path="docs/plans/step-16-diff-reporter-separator-options.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Structura.Common/Structura.Common.csproj" />
