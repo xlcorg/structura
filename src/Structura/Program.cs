@@ -1,6 +1,6 @@
 // Demo host. End-to-end JSON + XML pipelines: ParseJson<T> / ParseXml<T> ->
-// mutate -> ToJson / ToXml + SimpleReporter / ConsoleDiffReporter. See
-// CLAUDE.md for the target API and Samples/*.{json,xml} for the documents.
+// mutate -> ToJson / ToXml + DiffReporter. See CLAUDE.md for the target API
+// and Samples/*.{json,xml} for the documents.
 
 using Structura.Common;
 using Structura.Generated;
