@@ -114,6 +114,6 @@ public static class DiffReporter
         {
             return FallbackTotalWidth;
         }
-        return Math.Max(width, FallbackTotalWidth);
+        return width;
     }
 }

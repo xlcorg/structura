@@ -78,6 +78,20 @@ public sealed class DiffReporterLayoutTests
     }
 
     [Fact]
+    public void Auto_NarrowTerminal_FallsThroughToUnified_WithoutFloor()
+    {
+        // 80-wide terminal: below minSbsWidth (91), so Auto must pick Unified
+        // — even though 80 is below FallbackTotalWidth (120), the heuristic
+        // should not silently inflate the layout choice.
+        var doc = MakeDoc();
+        string output = Render(doc, terminalWidth: 80);
+
+        output.Should().NotContain(" │ ");
+        output.Should().Contain(" - ");
+        output.Should().Contain(" + ");
+    }
+
+    [Fact]
     public void Explicit_Unified_Forces_UnifiedEvenAtWideTerminal()
     {
         var doc = MakeDoc();
