@@ -1,27 +1,19 @@
 using Structura.Reporting.Internal;
-using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
 
 /// <summary>
-/// Renders <see cref="IStructuraDocument.Changes"/> as a two-column side-by-side
-/// diff (left = OLD, right = NEW). Reuses <see cref="DiffHunkBuilder"/> and
-/// <see cref="AnsiPalette"/> from <see cref="UnifiedDiffReporter"/>.
+/// Public wrapper kept temporarily during the Step 15 migration. The render
+/// loop now lives in <see cref="Internal.SideBySideRenderer"/>. This class is
+/// removed once <see cref="DiffReporter"/> is wired up and all tests have
+/// been re-pointed.
 /// </summary>
 public static class SideBySideDiffReporter
 {
-    // Default/minimum total width used when there is no real terminal to query
-    // (TextWriter overloads, redirected output, IDE run-console stub).
     private const int FallbackTotalWidth = 160;
-
-    // Per-cell padding around the gutter: a space, a sigil, and a space → " s ".
     private const int CellPaddingChars = 3;
-
-    // Inter-cell separator " │ " (or " | " when useUnicode is false): three chars either way.
     private const int SeparatorChars = 3;
-
-    // Minimum visible content characters per side before truncation kicks in.
     private const int MinContentPerSide = 1;
 
     private static readonly DiffReporterOptions DefaultOptions = new DiffReporterOptions();
@@ -80,19 +72,7 @@ public static class SideBySideDiffReporter
         }
         int contentWidth = (width - 2 * (gutterWidth + CellPaddingChars) - SeparatorChars) / 2;
 
-        IDiffSyntaxPainter painter = useColor
-            ? PainterFactory.For(document, options.SyntaxHighlight)
-            : NullPainter.Instance;
-
-        DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
-        writer.WriteLine();
-
-        IReadOnlyList<SideBySideRow> rows = SideBySideRowBuilder.Build(lines);
-        foreach (SideBySideRow row in rows)
-        {
-            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode, painter);
-            writer.WriteLine(rendered);
-        }
+        SideBySideRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, contentWidth, useColor, useUnicode);
     }
 
     private static int ComputeTotalWidth()
