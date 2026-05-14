@@ -26,4 +26,14 @@ public sealed record DiffReporterOptions
     /// <see cref="ContextLines"/> truncation, no <c>…</c> separator). Default <c>false</c>.
     /// </summary>
     public bool ShowFullFile { get; init; } = false;
+
+    /// <summary>
+    /// Selects the layout. <see cref="DiffReporterLayout.Auto"/> picks
+    /// side-by-side when the terminal is wide enough for the longest content
+    /// line (or for an acceptable per-side minimum), otherwise falls back to
+    /// unified. <see cref="DiffReporterLayout.Unified"/> and
+    /// <see cref="DiffReporterLayout.SideBySide"/> force that layout
+    /// regardless of width. Default <see cref="DiffReporterLayout.Auto"/>.
+    /// </summary>
+    public DiffReporterLayout Layout { get; init; } = DiffReporterLayout.Auto;
 }
