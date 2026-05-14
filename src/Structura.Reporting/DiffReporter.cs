@@ -1,28 +1,22 @@
 using Structura.Reporting.Internal;
-using Structura.Reporting.Internal.Highlighting;
 using Structura.Runtime;
 
 namespace Structura.Reporting;
 
 /// <summary>
-/// Renders <see cref="IStructuraDocument.Changes"/> as a two-column side-by-side
-/// diff (left = OLD, right = NEW). Reuses <see cref="DiffHunkBuilder"/> and
-/// <see cref="AnsiPalette"/> from <see cref="UnifiedDiffReporter"/>.
+/// Renders <see cref="IStructuraDocument.Changes"/> as a unified or
+/// side-by-side diff. <see cref="DiffReporterOptions.Layout"/> controls the
+/// choice: <see cref="DiffReporterLayout.Unified"/> and
+/// <see cref="DiffReporterLayout.SideBySide"/> force a layout;
+/// <see cref="DiffReporterLayout.Auto"/> (the default) picks side-by-side when
+/// the terminal meets the minimum two-column width, otherwise falls back to unified.
 /// </summary>
-public static class SideBySideDiffReporter
+public static class DiffReporter
 {
-    // Default/minimum total width used when there is no real terminal to query
-    // (TextWriter overloads, redirected output, IDE run-console stub).
-    private const int FallbackTotalWidth = 160;
-
-    // Per-cell padding around the gutter: a space, a sigil, and a space → " s ".
+    private const int FallbackTotalWidth = 120;
     private const int CellPaddingChars = 3;
-
-    // Inter-cell separator " │ " (or " | " when useUnicode is false): three chars either way.
     private const int SeparatorChars = 3;
-
-    // Minimum visible content characters per side before truncation kicks in.
-    private const int MinContentPerSide = 1;
+    private const int MinContentPerSide = 40;
 
     private static readonly DiffReporterOptions DefaultOptions = new DiffReporterOptions();
 
@@ -35,8 +29,8 @@ public static class SideBySideDiffReporter
     {
         bool useColor = !Console.IsOutputRedirected;
         bool useUnicode = Console.OutputEncoding.WebName == "utf-8";
-        int totalWidth = ComputeTotalWidth();
-        RenderTo(document, Console.Out, options, totalWidth, useColor, useUnicode);
+        int terminalWidth = ComputeTerminalWidth();
+        RenderTo(document, Console.Out, options, terminalWidth, useColor, useUnicode);
     }
 
     public static void Print(IStructuraDocument document, TextWriter writer)
@@ -53,7 +47,7 @@ public static class SideBySideDiffReporter
         IStructuraDocument document,
         TextWriter writer,
         DiffReporterOptions options,
-        int totalWidth,
+        int terminalWidth,
         bool useColor,
         bool useUnicode)
     {
@@ -70,32 +64,42 @@ public static class SideBySideDiffReporter
 
         IReadOnlyList<DiffLine> lines = DiffHunkBuilder.Build(document, options);
         DiffStats stats = DiffStats.Compute(lines);
-
         int gutterWidth = stats.MaxLineNumber.ToString().Length;
+
+        DiffReporterLayout resolved = ResolveLayout(options.Layout, terminalWidth, gutterWidth);
+
+        if (resolved == DiffReporterLayout.Unified)
+        {
+            UnifiedRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, useColor, useUnicode);
+            return;
+        }
+
+        int contentWidth = ComputeSideBySideContentWidth(terminalWidth, gutterWidth);
+        SideBySideRenderer.RenderTo(document, writer, options, lines, stats, gutterWidth, contentWidth, useColor, useUnicode);
+    }
+
+    private static DiffReporterLayout ResolveLayout(DiffReporterLayout requested, int terminalWidth, int gutterWidth)
+    {
+        if (requested != DiffReporterLayout.Auto)
+        {
+            return requested;
+        }
+        int minSbsWidth = 2 * (gutterWidth + CellPaddingChars) + SeparatorChars + 2 * MinContentPerSide;
+        return terminalWidth >= minSbsWidth ? DiffReporterLayout.SideBySide : DiffReporterLayout.Unified;
+    }
+
+    private static int ComputeSideBySideContentWidth(int terminalWidth, int gutterWidth)
+    {
         int minTotal = 2 * (gutterWidth + CellPaddingChars) + SeparatorChars + 2 * MinContentPerSide;
-        int width = totalWidth;
+        int width = terminalWidth;
         if (width < minTotal)
         {
             width = minTotal;
         }
-        int contentWidth = (width - 2 * (gutterWidth + CellPaddingChars) - SeparatorChars) / 2;
-
-        IDiffSyntaxPainter painter = useColor
-            ? PainterFactory.For(document, options.SyntaxHighlight)
-            : NullPainter.Instance;
-
-        DiffBanner.Write(writer, document.DocumentName, stats.Additions, stats.Removals, useColor, useUnicode);
-        writer.WriteLine();
-
-        IReadOnlyList<SideBySideRow> rows = SideBySideRowBuilder.Build(lines);
-        foreach (SideBySideRow row in rows)
-        {
-            string rendered = SideBySideRowRenderer.Render(row, gutterWidth, contentWidth, useColor, useUnicode, painter);
-            writer.WriteLine(rendered);
-        }
+        return (width - 2 * (gutterWidth + CellPaddingChars) - SeparatorChars) / 2;
     }
 
-    private static int ComputeTotalWidth()
+    private static int ComputeTerminalWidth()
     {
         int width;
         try
@@ -110,6 +114,6 @@ public static class SideBySideDiffReporter
         {
             return FallbackTotalWidth;
         }
-        return Math.Max(width, FallbackTotalWidth);
+        return width;
     }
 }

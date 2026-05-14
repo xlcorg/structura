@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Structura.UnitTests.Reporting;
 
-public sealed class SideBySideDiffReporterColorTests
+public sealed class DiffReporterSideBySideColorTests
 {
     private const string Source =
         "{\n" +
@@ -30,12 +30,13 @@ public sealed class SideBySideDiffReporterColorTests
     {
         var doc = MakeDoc();
         var sw = new System.IO.StringWriter();
-        SideBySideDiffReporter.RenderTo(doc, sw, options, totalWidth, useColor: true, useUnicode: true);
+        var withLayout = options with { Layout = DiffReporterLayout.SideBySide };
+        DiffReporter.RenderTo(doc, sw, withLayout, totalWidth, useColor: true, useUnicode: true);
         return sw.ToString();
     }
 
     [Fact]
-    public void Print_ColorEnabled_RemovedCellHasRowBg()
+    public void Print_ColorEnabled_RemovedAndAddedCellsHaveRowBg()
     {
         string output = RenderColored(new DiffReporterOptions());
 
@@ -120,7 +121,8 @@ public sealed class SideBySideDiffReporterColorTests
         };
         var sw = new System.IO.StringWriter();
 
-        SideBySideDiffReporter.RenderTo(doc, sw, new DiffReporterOptions(), totalWidth: 120, useColor: true, useUnicode: true);
+        var withLayout = new DiffReporterOptions { Layout = DiffReporterLayout.SideBySide };
+        DiffReporter.RenderTo(doc, sw, withLayout, terminalWidth: 120, useColor: true, useUnicode: true);
 
         string output = sw.ToString();
         string sepWrapped = AnsiPalette.Dim + "…" + AnsiPalette.DimOff;

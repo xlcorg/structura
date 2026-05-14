@@ -4,7 +4,7 @@ namespace Structura.Reporting.Internal;
 
 /// <summary>
 /// Builds the ordered list of <see cref="DiffLine"/> entries that
-/// <see cref="UnifiedDiffReporter"/> renders. Groups changes whose old-line
+/// <see cref="DiffReporter"/> renders. Groups changes whose old-line
 /// ranges fall within <c>2 * ContextLines</c> of each other into a single
 /// hunk, separated by <see cref="DiffLineKind.HunkSeparator"/>.
 /// </summary>

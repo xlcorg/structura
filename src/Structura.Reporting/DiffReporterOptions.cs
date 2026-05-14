@@ -1,10 +1,9 @@
 namespace Structura.Reporting;
 
 /// <summary>
-/// Options shared by <see cref="UnifiedDiffReporter"/> and
-/// <see cref="SideBySideDiffReporter"/>. Defaults match the spec: 3 lines of
-/// surrounding context, inline highlight on, syntax highlight on, full-file
-/// rendering off.
+/// Options consumed by <see cref="DiffReporter"/>. Defaults match the spec:
+/// 3 lines of surrounding context, inline highlight on, syntax highlight on,
+/// full-file rendering off, Auto layout.
 /// </summary>
 public sealed record DiffReporterOptions
 {
@@ -26,4 +25,13 @@ public sealed record DiffReporterOptions
     /// <see cref="ContextLines"/> truncation, no <c>…</c> separator). Default <c>false</c>.
     /// </summary>
     public bool ShowFullFile { get; init; } = false;
+
+    /// <summary>
+    /// Selects the layout. <see cref="DiffReporterLayout.Auto"/> picks
+    /// side-by-side when the terminal meets the minimum two-column width,
+    /// otherwise falls back to unified. <see cref="DiffReporterLayout.Unified"/>
+    /// and <see cref="DiffReporterLayout.SideBySide"/> force that layout
+    /// regardless of width. Default <see cref="DiffReporterLayout.Auto"/>.
+    /// </summary>
+    public DiffReporterLayout Layout { get; init; } = DiffReporterLayout.Auto;
 }
