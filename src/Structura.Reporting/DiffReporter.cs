@@ -55,6 +55,11 @@ public static class DiffReporter
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(options);
 
+        if (options.LeadingBlankLine)
+        {
+            writer.WriteLine();
+        }
+
         IReadOnlyList<DocumentChange> changes = document.Changes;
         if (changes.Count == 0)
         {

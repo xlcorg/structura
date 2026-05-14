@@ -34,4 +34,10 @@ public sealed record DiffReporterOptions
     /// regardless of width. Default <see cref="DiffReporterLayout.Auto"/>.
     /// </summary>
     public DiffReporterLayout Layout { get; init; } = DiffReporterLayout.Auto;
+
+    /// <summary>
+    /// When <c>true</c>, emit a single blank line before any other output.
+    /// Separates the diff from preceding console text. Default <c>true</c>.
+    /// </summary>
+    public bool LeadingBlankLine { get; init; } = true;
 }

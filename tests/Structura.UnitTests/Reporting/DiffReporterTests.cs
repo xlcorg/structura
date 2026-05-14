@@ -150,4 +150,42 @@ public sealed class DiffReporterTests
         output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Key));
         output.Should().NotContain(SyntaxPalette.Bright(TokenKind.Number));
     }
+
+    [Fact]
+    public void DiffReporterOptions_Defaults_LeadingBlankLineIsTrue()
+    {
+        var options = new DiffReporterOptions();
+
+        options.LeadingBlankLine.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Print_DefaultOptions_StartsWithBlankLine()
+    {
+        var doc = MakeDoc();
+        var sw = new System.IO.StringWriter();
+
+        DiffReporter.Print(doc, sw);
+
+        string output = sw.ToString();
+        output.Should().StartWith(System.Environment.NewLine);
+    }
+
+    [Fact]
+    public void Print_LeadingBlankLineFalse_StartsWithBannerDot()
+    {
+        var doc = MakeDoc();
+        var sw = new System.IO.StringWriter();
+
+        var options = new DiffReporterOptions
+        {
+            Layout = DiffReporterLayout.Unified,
+            LeadingBlankLine = false,
+        };
+        DiffReporter.Print(doc, sw, options);
+
+        string output = sw.ToString();
+        // The TextWriter overload uses useUnicode = true, so the dot is `●`.
+        output.Should().StartWith("●");
+    }
 }
