@@ -241,4 +241,27 @@ public sealed class DiffReporterTests
         output.Should().StartWith(expectedRuleLine);
         output.Should().Contain(expectedRuleAndStar);
     }
+
+    [Fact]
+    public void RenderTo_BothSeparatorsEnabled_OrderIsBlankThenRuleThenBanner()
+    {
+        var doc = MakeDoc();
+        var sw = new System.IO.StringWriter();
+
+        var options = new DiffReporterOptions
+        {
+            Layout = DiffReporterLayout.Unified,
+            LeadingBlankLine = true,
+            HorizontalRule = true,
+        };
+        DiffReporter.RenderTo(doc, sw, options, terminalWidth: 80, useColor: false, useUnicode: true);
+
+        string output = sw.ToString();
+        string[] lines = output.Split(new[] { System.Environment.NewLine }, System.StringSplitOptions.None);
+
+        string expectedRule = new string('─', 80);
+        lines[0].Should().BeEmpty();
+        lines[1].Should().Be(expectedRule);
+        lines[2].Should().StartWith("●");
+    }
 }
