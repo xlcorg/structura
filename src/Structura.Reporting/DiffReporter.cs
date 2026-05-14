@@ -59,6 +59,12 @@ public static class DiffReporter
         {
             writer.WriteLine();
         }
+        if (options.HorizontalRule)
+        {
+            char ruleChar = useUnicode ? '─' : '-';
+            string rule = new string(ruleChar, terminalWidth);
+            writer.WriteLine(rule);
+        }
 
         IReadOnlyList<DocumentChange> changes = document.Changes;
         if (changes.Count == 0)

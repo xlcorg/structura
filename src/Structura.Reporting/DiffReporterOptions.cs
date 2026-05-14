@@ -40,4 +40,12 @@ public sealed record DiffReporterOptions
     /// Separates the diff from preceding console text. Default <c>true</c>.
     /// </summary>
     public bool LeadingBlankLine { get; init; } = true;
+
+    /// <summary>
+    /// When <c>true</c>, emit a horizontal rule line spanning the resolved
+    /// terminal width immediately before the banner. The rule character is
+    /// <c>─</c> (utf-8) or <c>-</c> (ascii), matching the banner's
+    /// utf-8 / ascii branching. Default <c>false</c>.
+    /// </summary>
+    public bool HorizontalRule { get; init; } = false;
 }

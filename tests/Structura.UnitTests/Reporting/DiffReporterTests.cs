@@ -188,4 +188,53 @@ public sealed class DiffReporterTests
         // The TextWriter overload uses useUnicode = true, so the dot is `●`.
         output.Should().StartWith("●");
     }
+
+    [Fact]
+    public void DiffReporterOptions_Defaults_HorizontalRuleIsFalse()
+    {
+        var options = new DiffReporterOptions();
+
+        options.HorizontalRule.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RenderTo_HorizontalRuleTrue_Unicode_WritesUnicodeRuleAtTerminalWidth()
+    {
+        var doc = MakeDoc();
+        var sw = new System.IO.StringWriter();
+
+        var options = new DiffReporterOptions
+        {
+            Layout = DiffReporterLayout.Unified,
+            LeadingBlankLine = false,
+            HorizontalRule = true,
+        };
+        DiffReporter.RenderTo(doc, sw, options, terminalWidth: 80, useColor: false, useUnicode: true);
+
+        string output = sw.ToString();
+        string expectedRule = new string('─', 80);
+        output.Should().StartWith(expectedRule + System.Environment.NewLine);
+        // Banner is the next thing after the rule.
+        output.Should().Contain(expectedRule + System.Environment.NewLine + "●");
+    }
+
+    [Fact]
+    public void RenderTo_HorizontalRuleTrue_Ascii_WritesAsciiRuleAtTerminalWidth()
+    {
+        var doc = MakeDoc();
+        var sw = new System.IO.StringWriter();
+
+        var options = new DiffReporterOptions
+        {
+            Layout = DiffReporterLayout.Unified,
+            LeadingBlankLine = false,
+            HorizontalRule = true,
+        };
+        DiffReporter.RenderTo(doc, sw, options, terminalWidth: 80, useColor: false, useUnicode: false);
+
+        string output = sw.ToString();
+        string expectedRule = new string('-', 80);
+        output.Should().StartWith(expectedRule + System.Environment.NewLine);
+        output.Should().Contain(expectedRule + System.Environment.NewLine + "*");
+    }
 }
