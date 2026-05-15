@@ -5,6 +5,7 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
     <File Path="Directory.Packages.props" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/docs/">
     <File Path="docs/plans/step-10-xml-nested-generation.md" />
